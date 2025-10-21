@@ -402,7 +402,7 @@ AS BEGIN
 END;
 GO
 
---Obtener publicaciones de productos dada una subcategoria(CHUCHA CREO QUE FALTA CALIFICACIONES BORREN ESA MAMADA DE LA BD)
+--Obtener publicaciones de productos dada una subcategoria(CHUCHA CREO QUE LE FALTA CALIFICACIONES BORREN ESA MAMADA DE LA BD)
 CREATE PROCEDURE sp_getPublicacionesProductoPorSubcategoria
     @p_cod_subcat_prod
 AS BEGIN 

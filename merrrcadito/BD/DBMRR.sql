@@ -45,8 +45,8 @@ CREATE TABLE PROMOCION(
 
 CREATE TABLE RECOMPENSA(
 	cod_rec INTEGER IDENTITY(1, 1) PRIMARY KEY,
-	titulo_rec VARCHAR(100) NOT NULL,
-	desc_rec VARCHAR(100),
+	--titulo_rec VARCHAR(100) NOT NULL,
+	--desc_rec VARCHAR(100),
 	monto_rec DECIMAL(12, 2) NOT NULL DEFAULT(0.0)
 );
 
@@ -88,7 +88,7 @@ CREATE TABLE SUBCATEGORIA_PRODUCTO(
 	cod_cat INTEGER,
 	nom_subcat_prod VARCHAR(100) UNIQUE NOT NULL,
 	descr_subcat_prod VARCHAR(200),
-	imagen_representativa VARCHAR(200) UNIQUE NOT NULL,
+	imagen_representativa VARBINARY(MAX) NOT NULL,
 	FOREIGN KEY (cod_cat) REFERENCES CATEGORIA (cod_cat)
 );
 
@@ -427,6 +427,7 @@ CREATE TABLE ESCROW(
   CONSTRAINT CK_estado_escrow CHECK (estado_escrow IN ('liberado','retenido')),
   FOREIGN KEY(cod_trans) REFERENCES TRANSACCION(cod_trans)
 );
+
 
 
 

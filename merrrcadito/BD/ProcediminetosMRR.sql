@@ -220,6 +220,8 @@ VALUES(
 END;
 GO
 
+--Quizas añadir sp_actualizarEvento
+
 --Registrar usuario en evento(QUIZAS considerar un if para verificar si el usuairo ya esta inscrito, y un nuevo
 --   para registrar la fecha de inscripcion))
 CREATE PROCEDURE sp_participarEvento
@@ -301,6 +303,7 @@ AS BEGIN
    descr_cat=ISNULL(@p_descr_cat,descr_cat),
    imagen_repr=ISNULL(@p_imagen_repr,imagen_repr),
    tipo_cat=ISNULL(@p_tipo_cat,tipo_cat);
+   WHERE cod_cat=@p_cod_cat;
 END;
 GO
 
@@ -332,4 +335,106 @@ AS BEGIN
 END;
 GO
 
---Actualizar Subcategora
+--Actualizar Subcategora(VER imagen_representativa si es VARBINARY)
+CREATE PROCEDURE sp_actualizarSubcategoria
+    @p_cod_subcat_prod INTEGER,
+	@p_cod_cat INTEGER,
+	@p_nom_subcat_prod VARCHAR(100)=NULL,
+	@p_imagen_representativa VARCHAR(200)=NULL,
+	@p_descr_subcat_prod VARCHAR(200)=NULL
+AS BEGIN
+   UPDATE SUBCATEGORIA_PRODUCTO
+   SET
+     cod_subcat_prod=ISNULL(@p_cod_subcat_prod,cod_subcat_prod),
+	 cod_cat=ISNULL(@p_cod_cat,cod_cat),
+	 nom_subcat_prod=ISNULL(@p_nom_subcat_prod,nom_subcat_prod),
+	 imagen_representativa=ISNNULL(@p_imagen_representativa,imagen_representativa),
+	 descr_subcat_prod=ISNULL(@p_descr_subcat_prod,descr_subcat_prod);
+	 WHERE cod_subcat_prod=@p_cod_subcat_prod;
+END;
+GO
+
+--NO quiero hacer lo de transacciones uwu(aunque creo que ya hice una uwunt)
+
+--IMPORTANTE
+--en el informe dice -> listar PRODUCTOS/SERVICIOS por categoria NO SERIA PUBLICACION????
+--lo mismo con listar PRODUCOTS por subcategoria NO SERIA PUBLICACION?????
+
+
+--Listar Subcategorias correspondientes a una categoria
+CREATE PROCEDURE sp_getSubcategoriasDeCategoria
+    @p_cod_cat INTEGER
+AS BEGIN 
+  SELECT 
+    cod_subcat_prod,
+    nom_subcat_prod,
+	imagen_representativa
+  FROM SUBCATEGORIA_PRODUCTO 
+  WHERE cod_cat=@p_cod_cat;
+END;
+GO
+
+--Obtener publicaciones de servicios dada una categoria(VER SI NO SE NECSITA MAS CONDICIONALES, FILTROS O CAMPOS QUE SELECCIONAR)
+CREATE PROCEDURE sp_getPublicacionesServicioPorCategoria
+    @p_cod_cat INTEGER
+AS BEGIN
+    SELECT 
+        p.cod_pub,
+        p.foto_pub,
+        p.calif_pond_pub,
+        p.impacto_amb_pub,
+        s.id_serv,
+        s.nom_serv,
+        s.desc_serv,
+        s.precio_serv,
+        s.duracion_serv,
+        u.handle_name,
+        u.foto_us,
+        ps.hrs_ini_dia_serv,
+        ps.hrs_fin_dia_serv
+    FROM PUBLICACION p
+    INNER JOIN PUBLICACION_SERVICIO ps ON p.cod_pub = ps.cod_pub
+    INNER JOIN SERVICIO s ON ps.id_serv = s.id_serv
+    INNER JOIN CATEGORIA c ON s.cod_cat = c.cod_cat
+    INNER JOIN USUARIO u ON p.id_us = u.id_us
+    WHERE c.cod_cat = @p_cod_cat
+      AND c.tipo_cat = 'servicio'
+END;
+GO
+
+--Obtener publicaciones de productos dada una subcategoria(CHUCHA CREO QUE FALTA CALIFICACIONES BORREN ESA MAMADA DE LA BD)
+CREATE PROCEDURE sp_getPublicacionesProductoPorSubcategoria
+    @p_cod_subcat_prod
+AS BEGIN 
+    SELECT
+		p.cod_pub,
+		p.foto_pub,
+		p.calif_pond_pub,
+		p.impacto_amb_pub,
+		pr.id_prod,
+		pr.nom_prod,
+		pr.desc_prod,
+		pr.precio_prod,
+		ppr.cant_prod,
+		ppr.unidad_medida,
+		u.handle_name,
+		u.foto_us
+	FROM PUBLICACION p
+	INNER JOIN USUARIO u ON u.id_us=p.id_us
+	INNER JOIN PUBLICACION_PRODUCTO ppr ON  ppr.cod_pub=p.cod_pub
+	INNER JOIN PRODUCTO pr ON pr.id_prod=ppr.id_prod
+	INNER JOIN SUBCATEGORIA_PRODUCTO sub ON sub.cod_subcat_prod = pr.cod_subcat_prod
+	WHERE sub.cod_subcat_prod = @p_cod_subcat_prod
+END;
+GO
+      
+
+
+
+
+
+
+
+
+
+

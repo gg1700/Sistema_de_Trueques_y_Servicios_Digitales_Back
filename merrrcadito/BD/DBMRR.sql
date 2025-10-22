@@ -88,7 +88,7 @@ CREATE TABLE SUBCATEGORIA_PRODUCTO(
 	cod_cat INTEGER,
 	nom_subcat_prod VARCHAR(100) UNIQUE NOT NULL,
 	descr_subcat_prod VARCHAR(200),
-	imagen_representativa VARBINARY(MAX) UNIQUE NOT NULL,
+	imagen_representativa VARBINARY(MAX) NOT NULL,
 	FOREIGN KEY (cod_cat) REFERENCES CATEGORIA (cod_cat)
 );
 
@@ -430,6 +430,8 @@ CREATE TABLE ESCROW(
   CONSTRAINT CK_estado_escrow CHECK (estado_escrow IN ('liberado','retenido')),
   FOREIGN KEY(cod_trans) REFERENCES TRANSACCION(cod_trans)
 );
+
+
 
 
 

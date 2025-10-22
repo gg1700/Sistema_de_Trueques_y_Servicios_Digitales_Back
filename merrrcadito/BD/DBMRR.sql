@@ -45,8 +45,8 @@ CREATE TABLE PROMOCION(
 
 CREATE TABLE RECOMPENSA(
 	cod_rec INTEGER IDENTITY(1, 1) PRIMARY KEY,
-	titulo_rec VARCHAR(100) NOT NULL,
-	desc_rec VARCHAR(100),
+	--titulo_rec VARCHAR(100) NOT NULL,
+	--desc_rec VARCHAR(100),
 	monto_rec DECIMAL(12, 2) NOT NULL DEFAULT(0.0)
 );
 
@@ -88,7 +88,7 @@ CREATE TABLE SUBCATEGORIA_PRODUCTO(
 	cod_cat INTEGER,
 	nom_subcat_prod VARCHAR(100) UNIQUE NOT NULL,
 	descr_subcat_prod VARCHAR(200),
-	imagen_representativa VARCHAR(200) UNIQUE NOT NULL,
+	imagen_representativa VARBINARY(MAX) UNIQUE NOT NULL,
 	FOREIGN KEY (cod_cat) REFERENCES CATEGORIA (cod_cat)
 );
 
@@ -290,9 +290,11 @@ CREATE TABLE CALIFICACIONES_PUBLICACION(
 );
 
 CREATE TABLE USUARIO_LOGRO(
-    id_us INTEGER,                   
+    id_us INTEGER,      
+	cod_logro INTEGER,             
     fechaObtencion_logro DATETIME,
-    FOREIGN KEY (id_us) REFERENCES USUARIO(id_us)
+    FOREIGN KEY (id_us) REFERENCES USUARIO(id_us),
+	FOREIGN KEY (cod_logro) REFERENCES LOGRO(cod_logro)
 );
 
 CREATE TABLE PUBLICACION_PRODUCTO(
@@ -333,6 +335,7 @@ CREATE TABLE TRANSACCION(
 	FOREIGN KEY (cod_pub) REFERENCES PUBLICACION(cod_pub),
 	FOREIGN KEY (cod_evento) REFERENCES EVENTO(cod_evento)
 );
+
 
 --Ananin coonstrain a nivel_potenciador
 CREATE TABLE POTENCIADOR(

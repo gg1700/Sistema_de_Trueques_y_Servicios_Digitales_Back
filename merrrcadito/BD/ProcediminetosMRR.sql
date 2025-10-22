@@ -89,6 +89,8 @@ AS BEGIN
 END;
 GO
 
+--ELIMINAR USARIO(AÑADIR)
+
    
  --Registrar una Promocion
  CREATE PROCEDURE sp_registrarPromocion 
@@ -234,7 +236,7 @@ END;
 GO
 
 --Consultar transacciones de un usuario
-CREATE PROCEDURE sp_historiaTransaccionesUsuario
+CREATE PROCEDURE sp_historialTransaccionesUsuario
   @p_id_us INTEGER
 AS BEGIN
  SELECT * FROM TRANSACCION 
@@ -427,7 +429,114 @@ AS BEGIN
 	WHERE sub.cod_subcat_prod = @p_cod_subcat_prod
 END;
 GO
-      
+
+
+
+
+--POSTEGRESQL
+--verUsuario
+CREATE PROCEDURE sp_getUsuario
+  @p_id_us INTEGER
+AS BEGIN 
+  SELECT 
+      u.id_us,
+      u.handle_name,
+      u.nom_us,
+      u.ap_pat_us,
+      u.ap_mat_us,
+      u.fecha_nacimiento,
+      u.sexo,
+      u.correo_us,
+      u.telefono_us,
+      u.foto_us,
+      ub.cod_ubi 
+  FROM USUARIO u
+  INNER JOIN UBICACION ub ON u.cod_ubi = ub.cod_ubi
+  WHERE id_us = @p_id_us;
+END;
+GO
+
+
+--verLogros de un usuairo
+CREATE PROCEDURE sp_getLogrosUsuario
+    @p_id_us INTEGER
+AS 
+BEGIN
+    SELECT 
+        l.cod_logro,
+        l.titulo_logro,
+        l.descr_logro,
+        l.progreso_requerido,
+        l.icono_logro,
+        l.calidad_logro,
+        r.cod_rec,
+		r.monto_rec,
+        CASE 
+            WHEN ul.fechaObtencion_logro IS NOT NULL THEN 'OBTENIDO'
+            ELSE 'NO OBTENIDO'
+        END as estado_obtencion,
+        ul.fechaObtencion_logro,
+        ul.progreso_actual
+    FROM LOGRO l
+    LEFT JOIN USUARIO_LOGRO ul ON l.cod_logro = ul.cod_logro AND ul.id_us = @p_id_us
+	LEFT JOIN RECOMPENSA_LOGRO rl ON l.cod_logro=rl.cod_logro
+	LEFT JOIN RECOMPENSA r ON rl.cod_rec=r.cod_rec
+    ORDER BY 
+        CASE WHEN ul.fechaObtencion_logro IS NOT NULL THEN 1 ELSE 2 END,
+        ul.fechaObtencion_logro DESC;
+END;
+GO
+
+
+
+--obtenerHuellaCO2 de un usuario
+CREATE PROCEDURE sp_getHuellaCO2Usuario
+  @p_id_us
+AS BEGIN 
+  SELECT
+    u.id_us,
+	du.huella_co2
+  FROM USUARIO u
+  INNER JOIN  DETALLE_USUARIO du ON u.id_us=du.id_us
+  WHERE id_us=@p_id_us;
+END;
+GO
+
+--obtenerRankingde huella co2 de usuarios
+CREATE PROCEDURE sp_getRankingHuellaCO2
+    @p_top_n INTEGER = 10  
+AS 
+BEGIN
+    SELECT TOP (@p_top_n)
+        u.id_us,
+        u.handle_name,
+        u.nom_us,
+        u.foto_us,
+        du.huella_co2,
+        du.cant_ventas,
+        DENSE_RANK() OVER (ORDER BY du.huella_co2 ASC) as posicion_ranking
+    FROM USUARIO u
+    INNER JOIN DETALLE_USUARIO du ON u.id_us = du.id_us
+    WHERE u.estado_us = 'activo'  
+      AND du.huella_co2 > 0     
+    ORDER BY du.huella_co2 ASC;  
+END;
+GO
+
+--obtneer histroail de accesos de un usuario
+CREATE PROCEDURE sp_getHistorialAccesosUsuario
+    @p_id_us INTEGER
+AS BEGIN
+    SELECT 
+	  a.cod_acc,
+	  a.fecha_acc,
+	  a.estado_acc,
+	  a.contra_acc
+   FROM ACCESO a
+   WHERE a.id_us=@p_id_us
+   ORDER BY a.fecha_acc DESC;
+END;
+GO
 
 
 

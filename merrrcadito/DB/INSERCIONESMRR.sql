@@ -154,6 +154,11 @@ INSERT INTO MATERIAL (nom_mat, descr_mat, factor_co2) VALUES
 ('Cartón',       'Cartón reciclable para embalaje',       0.3000),
 ('Papel',        'Papel reciclado para oficina',          0.2000),
 ('Hormigón',     'Hormigón premezclado para construcción',1.7000);
+('Cobre',        'Cobre para electricidad',               2.80),
+('Algodón',      'Algodón natural',                       4.00),
+('Poliéster',    'Fibra sintética',                       5.50),
+('Poliestireno', 'Aislamiento EPS',                       3.20),
+('Yeso',         'Yeso para construcción',                0.35);
 
 -- =========================================
 -- LOGRO (icono_logro es BYTEA NOT NULL)
@@ -426,5 +431,95 @@ INSERT INTO PUBLICACION_LOGRO (cod_pub, cod_logro) VALUES
 
 INSERT INTO PUBLICACION_PROMOCION (cod_pub, cod_prom) VALUES
 (1,1),(2,2),(3,3);
+
+
+-- ==============================
+-- TABLA DE EQUIVALENCIAS
+-- ==============================
+INSERT INTO EQUIVALENCIA_CO2 (id_mat, unidad_origen, factor_conversion, descripcion) VALUES
+-- Acero (1)
+(1, 'kg', 1.85, '1 kg de acero = 1.85 kg CO2'),
+(1, 'g', 0.00185, '1 gramo de acero = 0.00185 kg CO2'),
+(1, 'ton', 1850, '1 tonelada de acero = 1850 kg CO2'),
+(1, 'unidad_viga', 92.5, '1 viga de acero 50kg = 92.5 kg CO2'),
+
+-- Aluminio (2)
+(2, 'kg', 8.50, '1 kg de aluminio = 8.50 kg CO2'),
+(2, 'g', 0.0085, '1 gramo de aluminio = 0.0085 kg CO2'),
+(2, 'ton', 8500, '1 tonelada de aluminio = 8500 kg CO2'),
+(2, 'lata', 0.1275, '1 lata de aluminio 15g = 0.1275 kg CO2'),
+
+-- Madera (3)
+(3, 'kg', 0.45, '1 kg de madera = 0.45 kg CO2'),
+(3, 'g', 0.00045, '1 gramo de madera = 0.00045 kg CO2'),
+(3, 'ton', 450, '1 tonelada de madera = 450 kg CO2'),
+(3, 'unidad_tabla', 4.5, '1 tabla de madera 10kg = 4.5 kg CO2'),
+
+-- Vidrio (4)
+(4, 'kg', 1.15, '1 kg de vidrio = 1.15 kg CO2'),
+(4, 'g', 0.00115, '1 gramo de vidrio = 0.00115 kg CO2'),
+(4, 'ton', 1150, '1 tonelada de vidrio = 1150 kg CO2'),
+(4, 'botella', 0.575, '1 botella de vidrio 500g = 0.575 kg CO2'),
+
+-- Plástico PET (5)
+(5, 'kg', 2.20, '1 kg de PET = 2.20 kg CO2'),
+(5, 'g', 0.0022, '1 gramo de PET = 0.0022 kg CO2'),
+(5, 'ton', 2200, '1 tonelada de PET = 2200 kg CO2'),
+(5, 'botella', 0.11, '1 botella PET 50g = 0.11 kg CO2'),
+
+-- Cemento (6)
+(6, 'kg', 0.90, '1 kg de cemento = 0.90 kg CO2'),
+(6, 'g', 0.0009, '1 gramo de cemento = 0.0009 kg CO2'),
+(6, 'ton', 900, '1 tonelada de cemento = 900 kg CO2'),
+(6, 'saco', 22.5, '1 saco de cemento 25kg = 22.5 kg CO2'),
+
+-- Ladrillo (7)
+(7, 'kg', 0.80, '1 kg de ladrillo = 0.80 kg CO2'),
+(7, 'g', 0.0008, '1 gramo de ladrillo = 0.0008 kg CO2'),
+(7, 'ton', 800, '1 tonelada de ladrillo = 800 kg CO2'),
+(7, 'unidad', 2.0, '1 ladrillo 2.5kg = 2.0 kg CO2'),
+
+-- Cartón (8)
+(8, 'kg', 0.30, '1 kg de cartón = 0.30 kg CO2'),
+(8, 'g', 0.0003, '1 gramo de cartón = 0.0003 kg CO2'),
+(8, 'ton', 300, '1 tonelada de cartón = 300 kg CO2'),
+(8, 'caja', 0.6, '1 caja de cartón 2kg = 0.6 kg CO2'),
+
+-- Papel (9)
+(9, 'kg', 0.20, '1 kg de papel = 0.20 kg CO2'),
+(9, 'g', 0.0002, '1 gramo de papel = 0.0002 kg CO2'),
+(9, 'ton', 200, '1 tonelada de papel = 200 kg CO2'),
+(9, 'hoja_a4', 0.001, '1 hoja A4 5g = 0.001 kg CO2'),
+
+-- Hormigón (10)
+(10, 'kg', 1.70, '1 kg de hormigón = 1.70 kg CO2'),
+(10, 'g', 0.0017, '1 gramo de hormigón = 0.0017 kg CO2'),
+(10, 'ton', 1700, '1 tonelada de hormigón = 1700 kg CO2'),
+(10, 'm3', 4250, '1 m3 de hormigón 2500kg = 4250 kg CO2'),
+
+-- Cobre (11)
+(11, 'kg', 2.80, '1 kg de cobre = 2.80 kg CO2'),
+(11, 'g', 0.0028, '1 gramo de cobre = 0.0028 kg CO2'),
+(11, 'ton', 2800, '1 tonelada de cobre = 2800 kg CO2'),
+
+-- Algodón (12)
+(12, 'kg', 4.00, '1 kg de algodón = 4.00 kg CO2'),
+(12, 'g', 0.004, '1 gramo de algodón = 0.004 kg CO2'),
+(12, 'camiseta', 0.8, '1 camiseta 200g = 0.8 kg CO2'),
+
+-- Poliéster (13)
+(13, 'kg', 5.50, '1 kg de poliéster = 5.50 kg CO2'),
+(13, 'g', 0.0055, '1 gramo de poliéster = 0.0055 kg CO2'),
+
+-- Poliestireno (14)
+(14, 'kg', 3.20, '1 kg de poliestireno = 3.20 kg CO2'),
+(14, 'g', 0.0032, '1 gramo de poliestireno = 0.0032 kg CO2'),
+
+-- Yeso (15)
+(15, 'kg', 0.35, '1 kg de yeso = 0.35 kg CO2'),
+(15, 'g', 0.00035, '1 gramo de yeso = 0.00035 kg CO2'),
+(15, 'placa', 8.75, '1 placa de yeso 25kg = 8.75 kg CO2');
+
+
 
 COMMIT;

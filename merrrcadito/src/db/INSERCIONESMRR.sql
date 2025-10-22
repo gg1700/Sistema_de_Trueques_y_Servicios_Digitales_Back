@@ -9,7 +9,7 @@ INSERT INTO ROL (nom_rol, descr_rol) VALUES
 ('administrador', 'Usuario con permisos de gestión, puede obtener reportes, dar de baja a usuarios, administrar la plataforma');
 
 -- =========================================
--- USUARIO (cod_bill/cod_ubi se rellenan luego vía UPDATE)
+-- USUARIO (cod_bill/cod_ubi se dejan NULL)
 -- =========================================
 INSERT INTO USUARIO (cod_bill, cod_rol, cod_ubi, ci, nom_us, handle_name, ap_pat_us, ap_mat_us, contra_us, fecha_nacimiento, sexo, estado_us, correo_us, telefono_us, foto_us)
 VALUES
@@ -36,7 +36,7 @@ VALUES
 (NULL, 3, NULL, 'CI3001', 'Marco Antonio', 'mantonio', 'Rivero', 'Soto', 'admin123', '1985-07-12', 'M', 'activo', 'marco.antonio@mail.com', '70030001', E'\\x');
 
 -- =========================================
--- BILLETERA (y vincular USUARIO.cod_bill)
+-- BILLETERA
 -- =========================================
 INSERT INTO BILLETERA (id_us, cuenta_bancaria, saldo_actual) VALUES
 (1,  '111100000001',  500.00),
@@ -55,14 +55,10 @@ INSERT INTO BILLETERA (id_us, cuenta_bancaria, saldo_actual) VALUES
 (14, '222200000006',  900.00),
 (15, '333300000001', 2500.00);
 
--- vincular cod_bill al usuario según id_us
-UPDATE USUARIO u
-SET cod_bill = b.cod_bill
-FROM BILLETERA b
-WHERE u.id_us = b.id_us;
+
 
 -- =========================================
--- UBICACION (dejar que cod_ubi sea identity)
+-- UBICACION
 -- =========================================
 INSERT INTO UBICACION (id_us, latitud_ubi, longitud_ubi) VALUES
 (1,  -16.500000, -68.150000),
@@ -72,11 +68,7 @@ INSERT INTO UBICACION (id_us, latitud_ubi, longitud_ubi) VALUES
 (9,  -16.495000, -68.160000),
 (10, -16.497500, -68.162500);
 
--- vincular cod_ubi al usuario
-UPDATE USUARIO u
-SET cod_ubi = ub.cod_ubi
-FROM UBICACION ub
-WHERE u.id_us = ub.id_us;
+
 
 -- =========================================
 -- DETALLE_USUARIO
@@ -117,8 +109,8 @@ VALUES
 -- ADVERTENCIA
 -- =========================================
 INSERT INTO ADVERTENCIA (motivo_adv, fecha_emision, estado_adv) VALUES
-('incumplimiento',     '2025-10-01 09:30', 'no revisado'),
-('contenido indebido', '2025-10-05 14:15', 'revisado'),
+('incumplimiento',      '2025-10-01 09:30', 'no revisado'),
+('contenido indebido',  '2025-10-05 14:15', 'revisado'),
 ('lenguaje inapropiado','2025-10-08 11:45', 'no revisado');
 
 -- =========================================
@@ -133,8 +125,7 @@ INSERT INTO PROMOCION (titulo_prom, fecha_ini_prom, duracion_prom, fecha_fin_pro
 ('Navidad Verde',      '2025-12-10 00:00', 15, '2025-12-25 00:00', 'Especial de Navidad en productos sostenibles.',  E'\\x', 50.00);
 
 -- =========================================
--- RECOMPENSA (solo monto_rec en el esquema migrado)
--- genero 20 recompensas para cubrir asociaciones
+-- RECOMPENSA
 -- =========================================
 INSERT INTO RECOMPENSA (monto_rec) VALUES
 (50.00),(30.00),(100.00),(75.00),(60.00),(40.00),(120.00),(150.00),(90.00),(80.00),
@@ -156,22 +147,22 @@ INSERT INTO MATERIAL (nom_mat, descr_mat, factor_co2) VALUES
 ('Hormigón',     'Hormigón premezclado para construcción',1.7000);
 
 -- =========================================
--- LOGRO (icono_logro es BYTEA NOT NULL)
+-- LOGRO
 -- =========================================
-INSERT INTO LOGRO (titulo_logro, descr_logro, progreso, estado_logro, icono_logro, calidad_logro) VALUES
-('Más limpio que la conciencia',         '#', 0.00, 'permanente', E'\\x', 'Comun'),
-('Mi primera vez...',                    '#', 0.00, 'temporal',   E'\\x', 'Especial'),
-('Bienvenido al increible mundo de MRRR','#', 0.00, 'permanente', E'\\x', 'Epico'),
-('Por los niños esclavos de China',      '#', 0.00, 'temporal',   E'\\x', 'Comun'),
-('Hace frío aquí en la cima',            '#', 0.00, 'permanente', E'\\x', 'Legendario'),
-('Billetera mata a galán',               '#', 0.00, 'temporal',   E'\\x', 'Especial'),
-('Quiero digievolucionar',               '#', 0.00, 'permanente', E'\\x', 'Legendario'),
-('Empieza por agarrar una pala',         '#', 0.00, 'temporal',   E'\\x', 'Epico'),
-('El bueno, el malo y el barato',        '#', 0.00, 'permanente', E'\\x', 'Especial'),
-('Hago más que un influencer',           '#', 0.00, 'temporal',   E'\\x', 'Legendario');
+INSERT INTO LOGRO (titulo_logro, descr_logro, icono_logro, calidad_logro) VALUES
+('Más limpio que la conciencia',         '#', E'\\x', 'Comun'),
+('Mi primera vez...',                    '#', E'\\x', 'Especial'),
+('Bienvenido al increible mundo de MRRR','#', E'\\x', 'Epico'),
+('Por los niños esclavos de China',      '#', E'\\x', 'Comun'),
+('Hace frío aquí en la cima',            '#', E'\\x', 'Legendario'),
+('Billetera mata a galán',               '#', E'\\x', 'Especial'),
+('Quiero digievolucionar',               '#', E'\\x', 'Legendario'),
+('Empieza por agarrar una pala',         '#', E'\\x', 'Epico'),
+('El bueno, el malo y el barato',        '#', E'\\x', 'Especial'),
+('Hago más que un influencer',           '#', E'\\x', 'Legendario');
 
 -- =========================================
--- CATEGORIA (imagen_repr BYTEA NOT NULL)
+-- CATEGORIA
 -- =========================================
 INSERT INTO CATEGORIA (nom_cat, descr_cat, imagen_repr, tipo_cat) VALUES
 ('Electrónica', 'Dispositivos electrónicos y gadgets', E'\\x', 'Producto'),
@@ -186,7 +177,7 @@ INSERT INTO CATEGORIA (nom_cat, descr_cat, imagen_repr, tipo_cat) VALUES
 ('Salud',       'Servicios médicos y de bienestar',    E'\\x', 'Servicio');
 
 -- =========================================
--- SUBCATEGORIA_PRODUCTO (imagen_representativa BYTEA NOT NULL)
+-- SUBCATEGORIA_PRODUCTO
 -- =========================================
 INSERT INTO SUBCATEGORIA_PRODUCTO (cod_cat, nom_subcat_prod, descr_subcat_prod, imagen_representativa) VALUES
 (1, 'Smartphones',  'Teléfonos inteligentes de diversas marcas', E'\\x'),
@@ -263,7 +254,7 @@ INSERT INTO PROMOCION_SERVICIO (id_serv, cod_prom) VALUES
 (5, 3);
 
 -- =========================================
--- MATERIAL_PRODUCTO (más asociaciones para poblar)
+-- MATERIAL_PRODUCTO
 -- =========================================
 INSERT INTO MATERIAL_PRODUCTO (id_mat, id_prod) VALUES
 (2,1),(4,1),(5,1),
@@ -278,7 +269,7 @@ INSERT INTO MATERIAL_PRODUCTO (id_mat, id_prod) VALUES
 (3,15),(1,15),(4,15),(3,16),(1,16),(4,16);
 
 -- =========================================
--- EVENTO (3 eventos; tipo_evento y estado_evento válidos)
+-- EVENTO
 -- =========================================
 INSERT INTO EVENTO (id_org, titulo_evento, descripcion_evento, fecha_registro_evento, fecha_inicio_evento, fecha_finalizacion_evento, duracion_evento, banner_evento, cant_personas_inscritas, ganancia_evento, tipo_evento, estado_evento)
 VALUES
@@ -287,7 +278,7 @@ VALUES
 (3, 'Pop-up Store Marketing',        'Evento temporal de venta directa y experiencias interactivas',          '2025-09-10 08:00:00', '2025-10-05', '2025-10-06',  2, 'popup_store.jpg',          150,  10000.0, 'BENEFICO',    'vigente');
 
 -- =========================================
--- USUARIO_EVENTO (ajustado a eventos 1..3)
+-- USUARIO_EVENTO
 -- =========================================
 INSERT INTO USUARIO_EVENTO (cod_evento, id_us) VALUES
 (1,1),(1,2),(2,3),(2,4),(3,5),(3,6);
@@ -343,7 +334,7 @@ INSERT INTO PUBLICACION (id_us, fecha_ini_pub, fecha_fin_pub, foto_pub, calif_po
 (8,'2025-09-20','2025-09-28',E'\\x',4.3,10.00),
 (9,'2025-09-22','2025-09-30',E'\\x',4.0, 8.90),
 (10,'2025-09-25','2025-10-02',E'\\x',4.6,12.00),
--- extras
+
 (11,'2025-10-01','2025-10-08',E'\\x',4.4,11.10),
 (12,'2025-10-03','2025-10-10',E'\\x',4.2, 9.80);
 
@@ -361,23 +352,23 @@ INSERT INTO CALIFICACIONES_PUBLICACION (cod_pub, id_us, calif_pub) VALUES
 (8,15, 4.4),(8, 1, 4.2),
 (9, 2, 4.0),(9, 3, 3.9),
 (10,4, 4.5),(10,5, 4.6),
--- extras
+
 (11,6, 4.1),(11,7, 4.3),
 (12,8, 4.0),(12,9, 4.2);
 
 -- =========================================
--- USUARIO_LOGRO (tu tabla no referencia cod_logro; solo fecha)
+-- USUARIO_LOGRO
 -- =========================================
-INSERT INTO USUARIO_LOGRO (id_us, fechaObtencion_logro) VALUES
-(1,'2025-10-01 10:00:00'),
-(1,'2025-10-05 12:30:00'),
-(2,'2025-10-02 09:15:00'),
-(3,'2025-10-03 14:20:00'),
-(3,'2025-10-06 11:10:00'),
-(4,'2025-10-04 08:50:00'),
-(5,'2025-10-05 15:40:00'),
-(6,'2025-10-06 10:30:00'),
-(6,'2025-10-07 13:20:00');
+INSERT INTO USUARIO_LOGRO (id_us, cod_logro, progreso, estado_logro, fechaObtencion_logro) VALUES
+(1, 1, 100.00, 'Completado', '2025-10-01 10:00:00'),
+(1, 2, 100.00, 'Completado', '2025-10-05 12:30:00'),
+(2, 3, 100.00, 'Completado', '2025-10-02 09:15:00'),
+(3, 4, 100.00, 'Completado', '2025-10-03 14:20:00'),
+(3, 5, 100.00, 'Completado', '2025-10-06 11:10:00'),
+(4, 6, 100.00, 'Completado', '2025-10-04 08:50:00'),
+(5, 7, 100.00, 'Completado', '2025-10-05 15:40:00'),
+(6, 8, 100.00, 'Completado', '2025-10-06 10:30:00'),
+(6, 9, 100.00, 'Completado', '2025-10-07 13:20:00');
 
 -- =========================================
 -- PUBLICACION_PRODUCTO / PUBLICACION_SERVICIO
@@ -387,7 +378,7 @@ INSERT INTO PUBLICACION_PRODUCTO (cod_pub, id_prod, cant_prod, unidad_medida) VA
 (2,2, 5,'unidad'),
 (3,3,20,'unidad'),
 (4,4,15,'unidad'),
--- extras
+
 (11,5,12,'unidad'),
 (12,6,18,'unidad');
 
@@ -399,7 +390,7 @@ INSERT INTO PUBLICACION_SERVICIO (cod_pub, id_serv, hrs_ini_dia_serv, hrs_fin_di
 (5,5,'08:30:00','10:30:00');
 
 -- =========================================
--- RECOMPENSA_LOGRO (asociar a recompensas 11..14 que acabamos de crear)
+-- RECOMPENSA_LOGRO
 -- =========================================
 INSERT INTO RECOMPENSA_LOGRO (cod_logro, cod_rec) VALUES
 (1,11),(4,11),(7,11),

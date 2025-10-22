@@ -349,3 +349,5 @@ RETURNS TABLE(
     JOIN SUBCATEGORIA_PRODUCTO sub ON sub.cod_subcat_prod = pr.cod_subcat_prod
     WHERE sub.cod_subcat_prod = _p_cod_subcat_prod
 $$;
+
+-- PROCEDIMIENTOS ALMACENADOS PARA EL CALCULO DE CO2

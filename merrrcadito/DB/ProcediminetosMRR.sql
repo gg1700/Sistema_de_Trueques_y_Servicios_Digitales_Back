@@ -349,3 +349,258 @@ RETURNS TABLE(
     JOIN SUBCATEGORIA_PRODUCTO sub ON sub.cod_subcat_prod = pr.cod_subcat_prod
     WHERE sub.cod_subcat_prod = _p_cod_subcat_prod
 $$;
+
+-- ====== PROCEDIMIENTOS ALMACENADOS PARA EL CALCULO DE CO2 ========
+
+-- Calcular CO2 usando la tabla de equivalencias
+CREATE OR REPLACE FUNCTION sp_calcular_co2_producto_equivalencia(
+    _p_id_prod INTEGER,
+    _p_cantidad DECIMAL(10,2),
+    _p_unidad VARCHAR(20) DEFAULT 'kg'
+) RETURNS DECIMAL(10,2) LANGUAGE plpgsql AS $$
+DECLARE
+    _total_co2 DECIMAL(10,2) := 0;
+    _material_co2 DECIMAL(10,4);
+    _factor_equiv DECIMAL(12,6);
+    _material_record RECORD;
+BEGIN
+    FOR _material_record IN 
+        SELECT mp.id_mat, m.factor_co2, m.nom_mat
+        FROM MATERIAL_PRODUCTO mp
+        JOIN MATERIAL m ON mp.id_mat = m.id_mat
+        WHERE mp.id_prod = _p_id_prod
+    LOOP
+        SELECT factor_conversion INTO _factor_equiv
+        FROM EQUIVALENCIA_CO2
+        WHERE id_mat = _material_record.id_mat 
+          AND unidad_origen = _p_unidad
+          AND unidad_destino = 'kg_co2';
+        
+        IF _factor_equiv IS NULL THEN
+            _material_co2 := _p_cantidad * _material_record.factor_co2;
+        ELSE
+            _material_co2 := _p_cantidad * _factor_equiv;
+        END IF;
+        
+        _total_co2 := _total_co2 + _material_co2;
+        
+        RAISE NOTICE 'Material: %, CO2: % kg', 
+            _material_record.nom_mat, _material_co2;
+    END LOOP;
+    
+    RETURN _total_co2;
+END;
+$$;
+
+-- USO:
+-- SELECT sp_calcular_co2_producto_equivalencia(1, 2.5, 'kg') AS co2_total;
+-- Calcula el CO2 de 2.5kg del producto ID 1
+
+-- Registrar nueva equivalencia con validación
+CREATE OR REPLACE FUNCTION sp_registrar_equivalencia(
+    _p_id_mat INTEGER,
+    _p_unidad_origen VARCHAR(20),
+    _p_factor_conversion DECIMAL(12,6),
+    _p_descripcion VARCHAR(200) DEFAULT NULL,
+    _p_fuente_datos VARCHAR(200) DEFAULT NULL
+) RETURNS INTEGER LANGUAGE plpgsql AS $$
+DECLARE
+    _nuevo_id INTEGER;
+    _material_exists BOOLEAN;
+BEGIN
+    SELECT EXISTS(SELECT 1 FROM MATERIAL WHERE id_mat = _p_id_mat) 
+    INTO _material_exists;
+    
+    IF NOT _material_exists THEN
+        RAISE EXCEPTION 'El material con ID % no existe', _p_id_mat;
+    END IF;
+    
+    INSERT INTO EQUIVALENCIA_CO2 (
+        id_mat, unidad_origen, unidad_destino, factor_conversion, 
+        descripcion, fuente_datos, fecha_actualizacion
+    ) VALUES (
+        _p_id_mat, _p_unidad_origen, 'kg_co2', _p_factor_conversion,
+        _p_descripcion, _p_fuente_datos, NOW()
+    )
+    RETURNING id_equiv INTO _nuevo_id;
+    
+    RETURN _nuevo_id;
+END;
+$$;
+
+-- USO:
+-- SELECT sp_registrar_equivalencia(1, 'ton', 1000, 'Conversión toneladas a kg CO2', 'EPA 2024');
+-- Registra que 1 tonelada = 1000 kg CO2 para el material ID 1
+
+
+
+-- Actualizar huella de carbono de un usuario sumando todas sus publicaciones
+CREATE OR REPLACE FUNCTION sp_actualizar_huella_usuario(
+    _p_id_us INTEGER
+) RETURNS DECIMAL(10,2) LANGUAGE plpgsql AS $$
+DECLARE
+    _nueva_huella DECIMAL(10,2) := 0;
+    _publicacion_record RECORD;
+    _co2_publicacion DECIMAL(10,2);
+BEGIN
+    FOR _publicacion_record IN 
+        SELECT p.cod_pub, pp.id_prod, pp.cant_prod, pp.unidad_medida,
+               pr.peso_prod, ps.id_serv
+        FROM PUBLICACION p
+        LEFT JOIN PUBLICACION_PRODUCTO pp ON p.cod_pub = pp.cod_pub
+        LEFT JOIN PRODUCTO pr ON pp.id_prod = pr.id_prod
+        LEFT JOIN PUBLICACION_SERVICIO ps ON p.cod_pub = ps.cod_pub
+        WHERE p.id_us = _p_id_us 
+          AND p.fecha_fin_pub >= CURRENT_DATE
+    LOOP
+        IF _publicacion_record.id_prod IS NOT NULL THEN
+            _co2_publicacion := sp_calcular_co2_producto_equivalencia(
+                _publicacion_record.id_prod,
+                _publicacion_record.cant_prod,
+                COALESCE(_publicacion_record.unidad_medida, 'kg')
+            );
+        ELSIF _publicacion_record.id_serv IS NOT NULL THEN
+            _co2_publicacion := 0; -- Por implementar para servicios
+        ELSE
+            _co2_publicacion := 0;
+        END IF;
+        
+        _nueva_huella := _nueva_huella + _co2_publicacion;
+        
+        UPDATE PUBLICACION 
+        SET impacto_amb_pub = _co2_publicacion
+        WHERE cod_pub = _publicacion_record.cod_pub;
+    END LOOP;
+    
+    UPDATE DETALLE_USUARIO 
+    SET huella_co2 = _nueva_huella
+    WHERE id_us = _p_id_us;
+    
+    RETURN _nueva_huella;
+END;
+$$;
+
+-- USO:
+-- SELECT sp_actualizar_huella_usuario(123) AS huella_actualizada;
+
+
+
+-- Obtener todas las equivalencias de un material
+CREATE OR REPLACE FUNCTION sp_get_equivalencias_material(
+    _p_id_mat INTEGER
+) RETURNS TABLE(
+    id_equiv INTEGER,
+    unidad_origen VARCHAR,
+    factor_conversion DECIMAL,
+    descripcion VARCHAR,
+    fecha_actualizacion TIMESTAMP,
+    fuente_datos VARCHAR,
+    nom_mat VARCHAR
+) LANGUAGE sql AS $$
+    SELECT 
+        e.id_equiv, e.unidad_origen, e.factor_conversion,
+        e.descripcion, e.fecha_actualizacion, e.fuente_datos,
+        m.nom_mat
+    FROM EQUIVALENCIA_CO2 e
+    JOIN MATERIAL m ON e.id_mat = m.id_mat
+    WHERE e.id_mat = _p_id_mat
+    ORDER BY e.unidad_origen;
+$$;
+
+-- USO:
+-- SELECT * FROM sp_get_equivalencias_material(1);
+
+
+
+-- Convertir entre diferentes unidades usando equivalencias
+CREATE OR REPLACE FUNCTION sp_convertir_unidad_co2(
+    _p_id_mat INTEGER,
+    _p_cantidad DECIMAL(12,4),
+    _p_unidad_origen VARCHAR(20),
+    _p_unidad_destino VARCHAR(20) DEFAULT 'kg_co2'
+) RETURNS DECIMAL(12,4) LANGUAGE plpgsql AS $$
+DECLARE
+    _factor_origen DECIMAL(12,6);
+    _factor_destino DECIMAL(12,6);
+    _resultado DECIMAL(12,4);
+BEGIN
+    SELECT factor_conversion INTO _factor_origen
+    FROM EQUIVALENCIA_CO2
+    WHERE id_mat = _p_id_mat 
+      AND unidad_origen = _p_unidad_origen
+      AND unidad_destino = 'kg_co2';
+    
+    SELECT factor_conversion INTO _factor_destino
+    FROM EQUIVALENCIA_CO2
+    WHERE id_mat = _p_id_mat 
+      AND unidad_origen = _p_unidad_destino
+      AND unidad_destino = 'kg_co2';
+    
+    IF _factor_origen IS NULL THEN
+        RAISE EXCEPTION 'No existe equivalencia para % en el material ID %', 
+            _p_unidad_origen, _p_id_mat;
+    END IF;
+    
+    IF _factor_destino IS NULL AND _p_unidad_destino != 'kg_co2' THEN
+        RAISE EXCEPTION 'No existe equivalencia para % en el material ID %', 
+            _p_unidad_destino, _p_id_mat;
+    END IF;
+    
+    IF _p_unidad_destino = 'kg_co2' THEN
+        _resultado := _p_cantidad * _factor_origen;
+    ELSE
+        _resultado := (_p_cantidad * _factor_origen) / _factor_destino;
+    END IF;
+    
+    RETURN _resultado;
+END;
+$$;
+
+-- USO:
+-- SELECT sp_convertir_unidad_co2(1, 100, 'kg', 'ton') AS equivalente_ton;
+-- Convierte 100 kg de material ID 1 a toneladas equivalentes de CO2
+
+
+
+-- Generar reporte detallado de impacto ambiental
+CREATE OR REPLACE FUNCTION sp_reporte_impacto_ambiental(
+    _p_id_us INTEGER
+) RETURNS TABLE(
+    tipo_publicacion VARCHAR,
+    nombre_item VARCHAR,
+    cantidad DECIMAL(10,2),
+    unidad VARCHAR,
+    co2_generado DECIMAL(10,2),
+    fecha_publicacion DATE
+) LANGUAGE sql AS $$
+    SELECT 
+        'Producto' AS tipo_publicacion,
+        pr.nom_prod AS nombre_item,
+        pp.cant_prod AS cantidad,
+        COALESCE(pp.unidad_medida, 'kg') AS unidad,
+        p.impacto_amb_pub AS co2_generado,
+        p.fecha_ini_pub AS fecha_publicacion
+    FROM PUBLICACION p
+    JOIN PUBLICACION_PRODUCTO pp ON p.cod_pub = pp.cod_pub
+    JOIN PRODUCTO pr ON pp.id_prod = pr.id_prod
+    WHERE p.id_us = _p_id_us
+    
+    UNION ALL
+    
+    SELECT 
+        'Servicio' AS tipo_publicacion,
+        s.nom_serv AS nombre_item,
+        1 AS cantidad,
+        'unidad' AS unidad,
+        p.impacto_amb_pub AS co2_generado,
+        p.fecha_ini_pub AS fecha_publicacion
+    FROM PUBLICACION p
+    JOIN PUBLICACION_SERVICIO ps ON p.cod_pub = ps.cod_pub
+    JOIN SERVICIO s ON ps.id_serv = s.id_serv
+    WHERE p.id_us = _p_id_us
+    ORDER BY fecha_publicacion DESC;
+$$;
+
+-- USO:
+-- SELECT * FROM sp_reporte_impacto_ambiental(123);
+

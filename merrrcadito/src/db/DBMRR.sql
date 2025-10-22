@@ -50,7 +50,8 @@ CREATE TABLE MATERIAL(
     id_mat INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nom_mat VARCHAR(100) UNIQUE NOT NULL,
     descr_mat VARCHAR(200),
-    factor_co2 DECIMAL(10, 4) NOT NULL
+    factor_co2 DECIMAL(10, 4) NOT NULL,
+    unidad_medida_co2 VARCHAR(20) DEFAULT 'kg'
 );
 
 CREATE TABLE LOGRO(
@@ -395,6 +396,23 @@ CREATE TABLE ESCROW(
   CONSTRAINT CK_estado_escrow CHECK (estado_escrow IN ('liberado','retenido')),
   FOREIGN KEY(cod_trans) REFERENCES TRANSACCION(cod_trans)
 );
+
+-- Tabla de equivalencias
+
+CREATE TABLE EQUIVALENCIA_CO2(
+    id_equiv INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id_mat INTEGER NOT NULL,
+    unidad_origen VARCHAR(20) NOT NULL, -- 'kg', 'ton', 'litro', etc.
+    unidad_destino VARCHAR(20) NOT NULL DEFAULT 'kg_co2', -- siempre kg de CO2
+    factor_conversion DECIMAL(12, 6) NOT NULL,
+    descripcion VARCHAR(200),
+    fecha_actualizacion TIMESTAMP DEFAULT NOW(),
+    fuente_datos VARCHAR(200), -- De dónde proviene el dato
+    FOREIGN KEY (id_mat) REFERENCES MATERIAL(id_mat),
+    CONSTRAINT UK_equiv_material_unidades UNIQUE(id_mat, unidad_origen, unidad_destino)
+);
+
+COMMENT ON TABLE EQUIVALENCIA_CO2 IS 'Tabla de equivalencias para cálculo de huella de carbono';
 
 ALTER TABLE BILLETERA ADD COLUMN id_us INTEGER;
 ALTER TABLE BILLETERA ADD FOREIGN KEY (id_us) REFERENCES USUARIO(id_us);

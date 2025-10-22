@@ -18,8 +18,8 @@ CREATE TABLE ORGANIZACION(
     logo_org BYTEA
 );
 
-/*A�adi su repesctivo contraint a estado_adv
-  A�adi constarint a motivo_adv*/
+/*Añadi su repesctivo contraint a estado_adv
+  Añadi constarint a motivo_adv*/
 CREATE TABLE ADVERTENCIA(
     cod_adv INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     motivo_adv VARCHAR(200) NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE ADVERTENCIA(
     CONSTRAINT CK_motivo_adv CHECK (motivo_adv IN ('incumplimiento','contenido indebido','lenguaje inapropiado'))
 );
 
---A�adi contarin a nom_rol
+--Añadi contarin a nom_rol
 CREATE TABLE ROL(
     cod_rol INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nom_rol VARCHAR(50) UNIQUE NOT NULL,
@@ -50,8 +50,6 @@ CREATE TABLE PROMOCION(
 
 CREATE TABLE RECOMPENSA(
     cod_rec INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    --titulo_rec VARCHAR(100) NOT NULL,
-    --desc_rec VARCHAR(100),
     monto_rec DECIMAL(12, 2) NOT NULL DEFAULT 0.0
 );
 
@@ -62,8 +60,8 @@ CREATE TABLE MATERIAL(
     factor_co2 DECIMAL(10, 4) NOT NULL
 );
 
-/*A�adi su respectivo constraint a estado_logro
-  A�adi constarint a calidad_logro*/
+/*Añadi su respectivo constraint a estado_logro
+  Añadi constarint a calidad_logro*/
 CREATE TABLE LOGRO(
     cod_logro INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     titulo_logro VARCHAR(100) UNIQUE NOT NULL,
@@ -76,8 +74,8 @@ CREATE TABLE LOGRO(
     CONSTRAINT CK_calidad_logro CHECK (calidad_logro IN ('Legendario','Epico','Especial','Comun'))
 );
 
-/*A�adi el campo tipo_cat(VERIFICAR SI NO SE NECESITA OTRA TABLA NUEVA)
-  A�adi contrain a tipo_cat*/
+/*Añadi el campo tipo_cat(VERIFICAR SI NO SE NECESITA OTRA TABLA NUEVA)
+  Añadi contrain a tipo_cat*/
 CREATE TABLE CATEGORIA(
     cod_cat INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nom_cat VARCHAR(100) UNIQUE NOT NULL,
@@ -97,7 +95,7 @@ CREATE TABLE SUBCATEGORIA_PRODUCTO(
     FOREIGN KEY (cod_cat) REFERENCES CATEGORIA (cod_cat)
 );
 
---A�adi su constraint en estado_serv
+--Añadi su constraint en estado_serv
 CREATE TABLE SERVICIO(
     id_serv INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     cod_cat INTEGER,
@@ -111,8 +109,8 @@ CREATE TABLE SERVICIO(
     FOREIGN KEY (cod_cat) REFERENCES CATEGORIA (cod_cat)
 );
 
-/*A�adi su constraint a estado_prod
-  A�adi contrainr a calidad_prod*/
+/*Añadi su constraint a estado_prod
+  Añadi contrainr a calidad_prod*/
 CREATE TABLE PRODUCTO(
     id_prod INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     cod_subcat_prod INTEGER,
@@ -162,8 +160,8 @@ CREATE TABLE MATERIAL_PRODUCTO(
     FOREIGN KEY (id_prod) REFERENCES PRODUCTO (id_prod)
 );
 
-/*A�adi su coonstraint en estado_evento
-  A�adi su contra a tipo_evento*/
+/*Añadi su coonstraint en estado_evento
+  Añadi su contra a tipo_evento*/
 CREATE TABLE EVENTO(
     cod_evento INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_org INTEGER,
@@ -192,8 +190,21 @@ CREATE TABLE EVENTO_RECOMPENSA(
     FOREIGN KEY (cod_rec) REFERENCES RECOMPENSA (cod_rec)
 );
 
+-- Primero crear BILLETERA y UBICACION antes de USUARIO
+CREATE TABLE BILLETERA(
+    cod_bill INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    cuenta_bancaria VARCHAR(50) UNIQUE NOT NULL,
+    saldo_actual DECIMAL(12,2) NOT NULL DEFAULT 0
+);
+
+CREATE TABLE UBICACION(
+    cod_ubi INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    latitud_ubi DECIMAL(10,6) NOT NULL DEFAULT 0.0,
+    longitud_ubi DECIMAL(10,6) NOT NULL DEFAULT 0.0
+);
+
 /*Agregue su constraint a estado_us
-  A�a�in su constraint a sexo*/
+  Añaín su constraint a sexo*/
 CREATE TABLE USUARIO(
     id_us INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     cod_bill INTEGER,
@@ -213,24 +224,9 @@ CREATE TABLE USUARIO(
     foto_us BYTEA,
     CONSTRAINT CK_estado_us CHECK (estado_us IN ('activo','suspendido','inactivo')),
     CONSTRAINT CK_sexo CHECK (sexo IN ('M','F')),
-    FOREIGN KEY (cod_rol) REFERENCES ROL(cod_rol)
-);
-
-CREATE TABLE BILLETERA(
-    cod_bill INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    id_us INTEGER,
-    cuenta_bancaria VARCHAR(50) UNIQUE NOT NULL,
-    saldo_actual DECIMAL(12,2) NOT NULL DEFAULT 0,
-    FOREIGN KEY (id_us) REFERENCES USUARIO(id_us)
-);
-
---Quizas agtegar IDENTITY en cod_ubi
-CREATE TABLE UBICACION(
-    cod_ubi INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    id_us INTEGER,
-    latitud_ubi DECIMAL(10,6) NOT NULL DEFAULT 0.0,
-    longitud_ubi DECIMAL(10,6) NOT NULL DEFAULT 0.0,
-    FOREIGN KEY (id_us) REFERENCES USUARIO(id_us)
+    FOREIGN KEY (cod_rol) REFERENCES ROL(cod_rol),
+    FOREIGN KEY (cod_bill) REFERENCES BILLETERA(cod_bill),
+    FOREIGN KEY (cod_ubi) REFERENCES UBICACION(cod_ubi)
 );
 
 --Agregue su constraint a estado_acc H
@@ -244,21 +240,19 @@ CREATE TABLE ACCESO(
     FOREIGN KEY (id_us) REFERENCES USUARIO(id_us)
 );
 
---Quizas cambiar el decimal(0-0.9) a(0-5) en calif
+--Corregido DECIMAL precision
 CREATE TABLE DETALLE_USUARIO(
-    id_us INTEGER,
+    id_us INTEGER PRIMARY KEY,
     cant_adv INTEGER NOT NULL DEFAULT 0,
     fecha_registro TIMESTAMP NOT NULL,
     cant_hrs_libres INTEGER NOT NULL DEFAULT 0,
     cant_dias_libres INTEGER NOT NULL DEFAULT 0,
-    --hrs_libres INTEGER, --{(09:00 - VIE 22 DIC), (10:00 - VIE 22 DIC)...}
     dias_ocupados INTEGER NOT NULL DEFAULT 0,
     hrs_ocupadas INTEGER NOT NULL DEFAULT 0,
-    calif_us DECIMAL(1, 1) NOT NULL DEFAULT 0.0,
-    calif_pond_us DECIMAL(1, 1) NOT NULL DEFAULT 0.0,
+    calif_us DECIMAL(2, 1) NOT NULL DEFAULT 0.0,
+    calif_pond_us DECIMAL(2, 1) NOT NULL DEFAULT 0.0,
     cant_ventas INTEGER NOT NULL DEFAULT 0,
     huella_co2 DECIMAL(10, 2) NOT NULL DEFAULT 0.0,
-    PRIMARY KEY(id_us),
     FOREIGN KEY (id_us) REFERENCES USUARIO (id_us)
 );
 
@@ -291,10 +285,14 @@ CREATE TABLE CALIFICACIONES_PUBLICACION(
     FOREIGN KEY (id_us) REFERENCES USUARIO(id_us)
 );
 
+--Corregido USUARIO_LOGRO con PRIMARY KEY y FK completa
 CREATE TABLE USUARIO_LOGRO(
     id_us INTEGER,
+    cod_logro INTEGER,
     fechaObtencion_logro TIMESTAMP,
-    FOREIGN KEY (id_us) REFERENCES USUARIO(id_us)
+    PRIMARY KEY(id_us, cod_logro),
+    FOREIGN KEY (id_us) REFERENCES USUARIO(id_us),
+    FOREIGN KEY (cod_logro) REFERENCES LOGRO(cod_logro)
 );
 
 CREATE TABLE PUBLICACION_PRODUCTO(
@@ -371,7 +369,7 @@ CREATE TABLE CONTRASENIA(
     FOREIGN KEY (id_us) REFERENCES USUARIO(id_us)
 );
 
---Camn�bie nombre TIENE2 a USUARIO_ADVERTENCIA
+--Camńbie nombre TIENE2 a USUARIO_ADVERTENCIA
 CREATE TABLE USUARIO_ADVERTENCIA(
     cod_adv INTEGER,
     id_us INTEGER,
@@ -403,7 +401,7 @@ CREATE TABLE PUBLICACION_LOGRO(
     FOREIGN KEY (cod_logro) REFERENCES LOGRO (cod_logro)
 );
 
---Cambie nombre de TIENE(no me acuerdo el numero *inserta patricio babeando*) a PUBLICACION_PROM0CION
+--Cambie nombre de TIENE a PUBLICACION_PROMOCION
 CREATE TABLE PUBLICACION_PROMOCION(
     cod_pub INTEGER,
     cod_prom INTEGER,
@@ -429,3 +427,10 @@ CREATE TABLE ESCROW(
   CONSTRAINT CK_estado_escrow CHECK (estado_escrow IN ('liberado','retenido')),
   FOREIGN KEY(cod_trans) REFERENCES TRANSACCION(cod_trans)
 );
+
+-- Ahora actualizar las tablas BILLETERA y UBICACION para agregar las referencias a USUARIO
+ALTER TABLE BILLETERA ADD COLUMN id_us INTEGER;
+ALTER TABLE BILLETERA ADD FOREIGN KEY (id_us) REFERENCES USUARIO(id_us);
+
+ALTER TABLE UBICACION ADD COLUMN id_us INTEGER;
+ALTER TABLE UBICACION ADD FOREIGN KEY (id_us) REFERENCES USUARIO(id_us);

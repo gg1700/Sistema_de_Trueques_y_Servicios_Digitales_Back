@@ -406,7 +406,7 @@ GO
 
 --Obtener publicaciones de productos dada una subcategoria(CHUCHA CREO QUE LE FALTA CALIFICACIONES BORREN ESA MAMADA DE LA BD)
 CREATE PROCEDURE sp_getPublicacionesProductoPorSubcategoria
-    @p_cod_subcat_prod
+    @p_cod_subcat_prod INTEGER
 AS BEGIN 
     SELECT
 		p.cod_pub,
@@ -491,7 +491,7 @@ GO
 
 --obtenerHuellaCO2 de un usuario
 CREATE PROCEDURE sp_getHuellaCO2Usuario
-  @p_id_us
+  @p_id_us INTEGER
 AS BEGIN 
   SELECT
     u.id_us,
@@ -538,9 +538,45 @@ AS BEGIN
 END;
 GO
 
+--obtener advertencias
+CREATE PROCEDURE sp_getAdvertencias
+AS BEGIN
+  SELECT 
 
 
 
+
+--dar de baja un usuario
+CREATE PROCEDURE sp_darBajaUsuario
+   @p_id_us INTEGER
+AS BEGIN
+    UPDATE USUARIO 
+    SET estado_us = 'suspendido'
+    WHERE id_us = @p_id_us;
+END;
+
+
+--Actualizar Evento
+CREATE PROCEDURE sp_actualizarEvento
+  @p_cod_evento INTEGER,
+  @p_titulo_evento VARCHAR(100)=NULL,
+  @p_descripcion_evento VARCHAR(200)=NULL,
+  @p_fecha_inicio_evento DATE=NULÑ,
+  @p_fecha_finalizacion_evento DATE=NULL,
+  @p_banner_evento VARBINARY(MAX)=NULL,
+  @p_tipo_evento VARCHAR(20)=NULL
+AS BEGIN
+  UPDATE EVENTO
+  SET
+    titulo_evento=ISNULL(@p_titulo_evento,titulo_evento),
+    descripcion_evento=ISNULL(@p_descripcion_evento,descripcion_evento),
+    fecha_inicio_evento=ISNULL(@p_fecha_inicio_evento,fecha_inicio_evento),
+    fecha_finalizacion_evento=ISNULL(@p_fecha_finalizacion_evento,fecha_finalizacion_evento),
+    banner_evento=ISNULL(@p_banner_evento,banner_evento),
+    tipo_evento=ISNULL(@p_tipo_evento,tipo_evento)
+    WHERE cod_evento=@p_cod_evento;
+END;
+GO
 
 
 

@@ -36,7 +36,6 @@ $$ LANGUAGE plpgsql;
 
 
 --ver logros(ganados y no ganados) de usuario
--- verLogros de un usuario
 CREATE OR REPLACE FUNCTION sp_getlogrosusuario(p_id_us INTEGER)
 RETURNS TABLE (
     cod_logro INTEGER,
@@ -156,6 +155,45 @@ BEGIN
     FROM ACCESO a
     WHERE a.id_us = p_id_us
     ORDER BY a.fecha_acc DESC;
+END;
+$$;
+
+
+--darDe baja a un usuario
+CREATE OR REPLACE PROCEDURE sp_darBajaUsuario(p_id_us INTEGER)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    UPDATE USUARIO
+    SET estado_us = 'suspendido'
+    WHERE id_us = p_id_us;
+END;
+$$;
+
+
+
+--Actualizar evento
+CREATE OR REPLACE PROCEDURE sp_actualizarEvento(
+  p_cod_evento INTEGER,
+  p_titulo_evento VARCHAR(100) DEFAULT NULL,
+  p_descripcion_evento VARCHAR(200) DEFAULT NULL,
+  p_fecha_inicio_evento DATE DEFAULT NULL,
+  p_fecha_finalizacion_evento DATE DEFAULT NULL,
+  p_banner_evento BYTEA DEFAULT NULL,
+  p_tipo_evento VARCHAR(20) DEFAULT NULL
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  UPDATE evento
+  SET
+    titulo_evento = COALESCE(p_titulo_evento, titulo_evento),
+    descripcion_evento = COALESCE(p_descripcion_evento, descripcion_evento),
+    fecha_inicio_evento = COALESCE(p_fecha_inicio_evento, fecha_inicio_evento),
+    fecha_finalizacion_evento = COALESCE(p_fecha_finalizacion_evento, fecha_finalizacion_evento),
+    banner_evento = COALESCE(p_banner_evento, banner_evento),
+    tipo_evento = COALESCE(p_tipo_evento, tipo_evento)
+  WHERE cod_evento = p_cod_evento;
 END;
 $$;
 

@@ -267,7 +267,7 @@ BEGIN
   IF NEW.progreso >= 100 THEN
     UPDATE usuario_logro
        SET estado_logro = 'Completado',
-           fechaObtencio_logro = NOW()
+           fecha_obtencion_logro = NOW()
      WHERE cod_us = NEW.cod_us AND cod_logro = NEW.cod_logro;
   ELSE
     UPDATE usuario_logro

@@ -414,15 +414,6 @@ CREATE TABLE INTERCAMBIO_PRODUCTO(
     FOREIGN KEY (cod_prod) REFERENCES PRODUCTO (cod_prod)
 );
 
-
-CREATE TABLE PUBLICACION_LOGRO(
-    cod_pub INTEGER,
-    cod_logro INTEGER,
-    PRIMARY KEY (cod_pub, cod_logro),
-    FOREIGN KEY (cod_pub) REFERENCES PUBLICACION (cod_pub),
-    FOREIGN KEY (cod_logro) REFERENCES LOGRO (cod_logro)
-);
-
 --Revisado
 CREATE TABLE PUBLICACION_PROMOCION(
     cod_pub INTEGER,

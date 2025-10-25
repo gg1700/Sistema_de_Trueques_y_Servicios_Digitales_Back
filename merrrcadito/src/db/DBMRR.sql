@@ -87,7 +87,10 @@ CREATE TABLE SUBCATEGORIA_PRODUCTO(
     nom_subcat_prod VARCHAR(100) UNIQUE NOT NULL,
     descr_subcat_prod VARCHAR(200),
     imagen_representativa BYTEA NOT NULL,
-    FOREIGN KEY (cod_cat) REFERENCES CATEGORIA(cod_cat)
+    FOREIGN KEY (cod_cat) 
+        REFERENCES CATEGORIA(cod_cat)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -101,7 +104,10 @@ CREATE TABLE SERVICIO(
     duracion_serv INTEGER NOT NULL DEFAULT 0,
     dif_dist_serv DECIMAL(10, 2) NOT NULL DEFAULT 0.0,
     CONSTRAINT CK_estado_serv CHECK (estado_serv IN ('disponible','no disponible')),
-    FOREIGN KEY (cod_cat) REFERENCES CATEGORIA (cod_cat)
+    FOREIGN KEY (cod_cat) 
+        REFERENCES CATEGORIA (cod_cat)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -117,7 +123,10 @@ CREATE TABLE PRODUCTO(
     desc_prod VARCHAR(200),
     CONSTRAINT CK_estado_prod CHECK (estado_prod IN ('disponible','agotado')),
     CONSTRAINT CK_calidad_prod CHECK (calidad_prod IN ('usado','nuevo')),
-    FOREIGN KEY (cod_subcat_prod) REFERENCES SUBCATEGORIA_PRODUCTO (cod_subcat_prod)
+    FOREIGN KEY (cod_subcat_prod) 
+        REFERENCES SUBCATEGORIA_PRODUCTO (cod_subcat_prod)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -125,8 +134,14 @@ CREATE TABLE PROMOCION_PRODUCTO(
     cod_prod INTEGER,
     cod_prom INTEGER,
     PRIMARY KEY (cod_prod, cod_prom),
-    FOREIGN KEY (cod_prod) REFERENCES PRODUCTO (cod_prod),
-    FOREIGN KEY (cod_prom) REFERENCES PROMOCION (cod_prom)
+    FOREIGN KEY (cod_prod) 
+        REFERENCES PRODUCTO (cod_prod)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (cod_prom) 
+        REFERENCES PROMOCION (cod_prom)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -134,8 +149,14 @@ CREATE TABLE RECOMPENSA_LOGRO(
     cod_logro INTEGER,
     cod_rec INTEGER,
     PRIMARY KEY (cod_logro, cod_rec),
-    FOREIGN KEY (cod_logro) REFERENCES LOGRO (cod_logro),
-    FOREIGN KEY (cod_rec) REFERENCES RECOMPENSA (cod_rec)
+    FOREIGN KEY (cod_logro) 
+        REFERENCES LOGRO (cod_logro)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (cod_rec) 
+        REFERENCES RECOMPENSA (cod_rec)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -143,8 +164,14 @@ CREATE TABLE PROMOCION_SERVICIO(
     cod_serv INTEGER,
     cod_prom INTEGER,
     PRIMARY KEY (cod_serv, cod_prom),
-    FOREIGN KEY (cod_serv) REFERENCES SERVICIO (cod_serv),
-    FOREIGN KEY (cod_prom) REFERENCES PROMOCION (cod_prom)
+    FOREIGN KEY (cod_serv) 
+        REFERENCES SERVICIO (cod_serv)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (cod_prom) 
+        REFERENCES PROMOCION (cod_prom)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -152,8 +179,14 @@ CREATE TABLE MATERIAL_PRODUCTO(
     cod_mat INTEGER,
     cod_prod INTEGER,
     PRIMARY KEY (cod_mat, cod_prod),
-    FOREIGN KEY (cod_mat) REFERENCES MATERIAL (cod_mat),
-    FOREIGN KEY (cod_prod) REFERENCES PRODUCTO (cod_prod)
+    FOREIGN KEY (cod_mat) 
+        REFERENCES MATERIAL (cod_mat)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (cod_prod) 
+        REFERENCES PRODUCTO (cod_prod)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -171,9 +204,12 @@ CREATE TABLE EVENTO(
     ganancia_evento DECIMAL(12,2) NOT NULL DEFAULT 0,
     estado_evento VARCHAR(20) NOT NULL,
     tipo_evento VARCHAR(20) NOT NULL,
-    CONSTRAINT CK_tipo_evento CHECK (tipo_evento IN ('BENEFICO','MONETIZABLE')),
+    CONSTRAINT CK_tipo_evento CHECK (tipo_evento IN ('benefico','monetizable')),
     CONSTRAINT CK_estado_evento CHECK (estado_evento IN ('vigente','finalizado')),
-    FOREIGN KEY (cod_org) REFERENCES ORGANIZACION(cod_org)
+    FOREIGN KEY (cod_org) 
+        REFERENCES ORGANIZACION(cod_org)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -181,8 +217,14 @@ CREATE TABLE EVENTO_RECOMPENSA(
     cod_evento INTEGER,
     cod_rec INTEGER,
     PRIMARY KEY (cod_evento, cod_rec),
-    FOREIGN KEY (cod_evento) REFERENCES EVENTO (cod_evento),
-    FOREIGN KEY (cod_rec) REFERENCES RECOMPENSA (cod_rec)
+    FOREIGN KEY (cod_evento) 
+        REFERENCES EVENTO (cod_evento),
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (cod_rec) 
+        REFERENCES RECOMPENSA (cod_rec)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -191,7 +233,10 @@ CREATE TABLE BILLETERA(
     cod_us INTEGER,
     cuenta_bancaria VARCHAR(50) UNIQUE NOT NULL,
     saldo_actual DECIMAL(12,2) NOT NULL DEFAULT 0,
-    FOREIGN KEY (cod_us) REFERENCES USUARIO(cod_us)
+    FOREIGN KEY (cod_us) 
+        REFERENCES USUARIO(cod_us)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -201,7 +246,10 @@ CREATE TABLE UBICACION(
     latitud_ubi DECIMAL(10,6) NOT NULL DEFAULT 0.0,
     longitud_ubi DECIMAL(10,6) NOT NULL DEFAULT 0.0
     nom_ubi VARCHAR(100) NOT NULL,
-    FOREIGN KEY (cod_us) REFERENCES USUARIO(cod_us)
+    FOREIGN KEY (cod_us) 
+        REFERENCES USUARIO(cod_us)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL
 );
 
 --Revisado
@@ -223,8 +271,14 @@ CREATE TABLE USUARIO(
     foto_us BYTEA,
     CONSTRAINT CK_estado_us CHECK (estado_us IN ('activo','suspendido','inactivo')),
     CONSTRAINT CK_sexo CHECK (sexo IN ('M','F')),
-    FOREIGN KEY (cod_rol) REFERENCES ROL(cod_rol),
-    FOREIGN KEY (cod_disp) REFERENCES DISPONIBILIDAD(cod_disp)
+    FOREIGN KEY (cod_rol) 
+        REFERENCES ROL(cod_rol),
+        ON UPDATE CASCADE,
+        ON DELETE SET NULL
+    FOREIGN KEY (cod_disp) 
+        REFERENCES DISPONIBILIDAD(cod_disp)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL
 );
 
 --Revisado
@@ -250,7 +304,10 @@ CREATE TABLE DETALLE_USUARIO(
     calif_pond_us DECIMAL(2, 1) NOT NULL DEFAULT 0.0,
     cant_ventas INTEGER NOT NULL DEFAULT 0,
     huella_co2 DECIMAL(10, 2) NOT NULL DEFAULT 0.0,
-    FOREIGN KEY (cod_us) REFERENCES USUARIO(cod_us)
+    FOREIGN KEY (cod_us) 
+        REFERENCES USUARIO(cod_us)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -270,7 +327,10 @@ CREATE TABLE PUBLICACION(
     foto_pub BYTEA,
     calif_pond_pub DECIMAL(3,2) NOT NULL DEFAULT 0.0,
     impacto_amb_pub DECIMAL(10,2) NOT NULL DEFAULT 0.0,
-    FOREIGN KEY (cod_us) REFERENCES USUARIO(cod_us)
+    FOREIGN KEY (cod_us) 
+        REFERENCES USUARIO(cod_us)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -279,8 +339,14 @@ CREATE TABLE CALIFICACIONES_PUBLICACION(
     cod_us INTEGER,
     calif_pub DECIMAL(3,2) NOT NULL DEFAULT 0.0,
     PRIMARY KEY(cod_pub,cod_us),
-    FOREIGN KEY (cod_pub) REFERENCES PUBLICACION(cod_pub),
-    FOREIGN KEY (cod_us) REFERENCES USUARIO(cod_us)
+    FOREIGN KEY (cod_pub) 
+        REFERENCES PUBLICACION(cod_pub),
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (cod_us) 
+        REFERENCES USUARIO(cod_us)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -289,8 +355,13 @@ CREATE TABLE CALIFICACION(
     calificacion_us DECIMAL(2,1) NOT NULL DEFAULT 0.0,
     cod_us_calificador INTEGER,
     cod_us_calificado INTEGER,
-    FOREIGN KEY (cod_us_calificador) REFERENCES USUARIO(cod_us),
+    FOREIGN KEY (cod_us_calificador) 
+        REFERENCES USUARIO(cod_us),
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
     FOREIGN KEY (cod_us_calificado) REFERENCES USUARIO(cod_us)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
 );
 
 --Revisado
@@ -302,8 +373,14 @@ CREATE TABLE USUARIO_LOGRO(
     fecha_obtencion_logro TIMESTAMP,
     CONSTRAINT CK_estado_logro CHECK (estado_logro IN ('obtenido','en progreso')),
     PRIMARY KEY(cod_us, cod_logro),
-    FOREIGN KEY (cod_us) REFERENCES USUARIO(cod_us),
-    FOREIGN KEY (cod_logro) REFERENCES LOGRO(cod_logro)
+    FOREIGN KEY (cod_us) 
+        REFERENCES USUARIO(cod_us),
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    FOREIGN KEY (cod_logro) 
+        REFERENCES LOGRO(cod_logro)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL
 );
 
 --Revisado
@@ -313,8 +390,14 @@ CREATE TABLE PUBLICACION_PRODUCTO(
     cant_prod INTEGER NOT NULL DEFAULT 0,
     unidad_medida VARCHAR(20),
     PRIMARY KEY(cod_pub, cod_prod),
-    FOREIGN KEY (cod_pub) REFERENCES PUBLICACION (cod_pub),
-    FOREIGN KEY (cod_prod) REFERENCES PRODUCTO (cod_prod)
+    FOREIGN KEY (cod_pub) 
+        REFERENCES PUBLICACION (cod_pub)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (cod_prod) 
+        REFERENCES PRODUCTO (cod_prod)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -324,8 +407,14 @@ CREATE TABLE PUBLICACION_SERVICIO(
     hrs_ini_dia_serv TIME NOT NULL,
     hrs_fin_dia_serv TIME NOT NULL,
     PRIMARY KEY (cod_pub, cod_serv),
-    FOREIGN KEY (cod_pub) REFERENCES PUBLICACION(cod_pub),
-    FOREIGN KEY (cod_serv) REFERENCES SERVICIO(cod_serv)
+    FOREIGN KEY (cod_pub) 
+        REFERENCES PUBLICACION(cod_pub),
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (cod_serv) 
+        REFERENCES SERVICIO(cod_serv)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -342,11 +431,26 @@ CREATE TABLE TRANSACCION(
     monto_regalo DECIMAL(12,2) NOT NULL,
     estado_trans VARCHAR(20) NOT NULL,
     CONSTRAINT CK_estado_trans CHECK (estado_trans IN ('satisfactorio','no satisfactorio')),
-    FOREIGN KEY (cod_us_origen) REFERENCES USUARIO(cod_us),
-    FOREIGN KEY (cod_us_destino) REFERENCES USUARIO(cod_us),
-    FOREIGN KEY (cod_pub) REFERENCES PUBLICACION(cod_pub),
-    FOREIGN KEY (cod_evento) REFERENCES EVENTO(cod_evento),
-    FOREIGN KEY (cod_potenciador) REFERENCES POTENCIADOR(cod_potenciador)
+    FOREIGN KEY (cod_us_origen) 
+        REFERENCES USUARIO(cod_us),
+        ON UPDATE CASCADE
+        ON DELETE SET NULL,
+    FOREIGN KEY (cod_us_destino) 
+        REFERENCES USUARIO(cod_us),
+        ON UPDATE CASCADE
+        ON DELETE SET NULL,
+    FOREIGN KEY (cod_pub) 
+        REFERENCES PUBLICACION(cod_pub)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL,
+    FOREIGN KEY (cod_evento) 
+        REFERENCES EVENTO(cod_evento)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL,
+    FOREIGN KEY (cod_potenciador) 
+        REFERENCES POTENCIADOR(cod_potenciador)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL
 );
 
 --Revisado
@@ -368,8 +472,14 @@ CREATE TABLE USUARIO_EVENTO(
     cod_evento INTEGER,
     cod_us INTEGER,
     PRIMARY KEY (cod_evento, cod_us),
-    FOREIGN KEY (cod_evento) REFERENCES EVENTO(cod_evento),
-    FOREIGN KEY (cod_us) REFERENCES USUARIO(cod_us)
+    FOREIGN KEY (cod_evento) 
+        REFERENCES EVENTO(cod_evento),
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (cod_us) 
+        REFERENCES USUARIO(cod_us)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -380,7 +490,10 @@ CREATE TABLE CONTRASENIA(
     correo_acc VARCHAR(100) NOT NULL,
     contra_prev VARCHAR(100) NOT NULL,
     contra_nueva VARCHAR(100) NOT NULL,
-    FOREIGN KEY (cod_us) REFERENCES USUARIO(cod_us)
+    FOREIGN KEY (cod_us) 
+        REFERENCES USUARIO(cod_us)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -388,8 +501,14 @@ CREATE TABLE USUARIO_ADVERTENCIA(
     cod_adv INTEGER,
     cod_us INTEGER,
     PRIMARY KEY (cod_adv, cod_us),
-    FOREIGN KEY (cod_adv) REFERENCES ADVERTENCIA(cod_adv),
-    FOREIGN KEY (cod_us) REFERENCES USUARIO(cod_us)
+    FOREIGN KEY (cod_adv) 
+        REFERENCES ADVERTENCIA(cod_adv)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (cod_us) 
+        REFERENCES USUARIO(cod_us)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE    
 );
 
 --Revisado
@@ -401,8 +520,14 @@ CREATE TABLE INTERCAMBIO(
     unidad_medida VARCHAR(20),
     foto_inter BYTEA NOT NULL,
     impacto_amb_inter DECIMAL (10, 2) NOT NULL DEFAULT 0.0,
-    FOREIGN KEY (cod_us_1) REFERENCES USUARIO (cod_us),
-    FOREIGN KEY (cod_us_2) REFERENCES USUARIO (cod_us)
+    FOREIGN KEY (cod_us_1) 
+        REFERENCES USUARIO (cod_us)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL,
+    FOREIGN KEY (cod_us_2) 
+        REFERENCES USUARIO (cod_us)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL
 );
 
 --Revisado
@@ -410,8 +535,14 @@ CREATE TABLE INTERCAMBIO_PRODUCTO(
     cod_inter INTEGER,
     cod_prod INTEGER,
     PRIMARY KEY (cod_inter, cod_prod),
-    FOREIGN KEY (cod_inter) REFERENCES INTERCAMBIO (cod_inter),
-    FOREIGN KEY (cod_prod) REFERENCES PRODUCTO (cod_prod)
+    FOREIGN KEY (cod_inter) 
+        REFERENCES INTERCAMBIO (cod_inter)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (cod_prod) 
+        REFERENCES PRODUCTO (cod_prod)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -419,8 +550,14 @@ CREATE TABLE PUBLICACION_PROMOCION(
     cod_pub INTEGER,
     cod_prom INTEGER,
     PRIMARY KEY (cod_pub, cod_prom),
-    FOREIGN KEY (cod_pub) REFERENCES PUBLICACION (cod_pub),
-    FOREIGN KEY (cod_prom) REFERENCES PROMOCION (cod_prom)
+    FOREIGN KEY (cod_pub) 
+        REFERENCES PUBLICACION (cod_pub)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (cod_prom) 
+        REFERENCES PROMOCION (cod_prom)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -429,9 +566,18 @@ CREATE TABLE BITACORA(
     cod_acc INTEGER,
     cod_trans INTEGER,
     cod_camb INTEGER,
-    FOREIGN KEY (cod_acc) REFERENCES ACCESO(cod_acc),
-    FOREIGN KEY (cod_trans) REFERENCES TRANSACCION(cod_trans),
-    FOREIGN KEY (cod_camb) REFERENCES CONTRASENIA(cod_camb)
+    FOREIGN KEY (cod_acc) 
+        REFERENCES ACCESO(cod_acc)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (cod_trans) 
+        REFERENCES TRANSACCION(cod_trans)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (cod_camb) 
+        REFERENCES CONTRASENIA(cod_camb)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 --Revisado
@@ -440,7 +586,9 @@ CREATE TABLE ESCROW(
   estado_escrow VARCHAR(25) NOT NULL,
   cod_trans INTEGER,
   CONSTRAINT CK_estado_escrow CHECK (estado_escrow IN ('liberado','retenido')),
-  FOREIGN KEY(cod_trans) REFERENCES TRANSACCION(cod_trans)
+  FOREIGN KEY(cod_trans) 
+    REFERENCES TRANSACCION(cod_trans)
+    ON UPDATE CASCADE
 );
 
 --Revisado
@@ -452,8 +600,11 @@ CREATE TABLE EQUIVALENCIA_CO2(
     factor_conversion DECIMAL(12, 6) NOT NULL,
     descripcion_equiv VARCHAR(200),
     fecha_actualizacion TIMESTAMP DEFAULT NOW(),
-    FOREIGN KEY (cod_mat) REFERENCES MATERIAL(cod_mat),
-    CONSTRAINT UK_equiv_material_unidades UNIQUE(cod_mat, unidad_origen, unidad_destino)
+    CONSTRAINT UK_equiv_material_unidades UNIQUE(cod_mat, unidad_origen, unidad_destino),
+    FOREIGN KEY (cod_mat) 
+        REFERENCES MATERIAL(cod_mat)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 COMMENT ON TABLE EQUIVALENCIA_CO2 IS 'Tabla de equivalencias para cálculo de huella de carbono';

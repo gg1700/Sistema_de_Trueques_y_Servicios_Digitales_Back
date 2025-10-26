@@ -11,10 +11,12 @@ COMMENT ON INDEX idx_usuario_ci IS 'Verificación rápida de ci';
 
 -- INDICES PARA TABLA: PUBLICACION
 
-CREATE INDEX idx_publicacion_vigentes ON PUBLICACION (fecha_fin_pub) WHERE fecha_fin_pub >= CURRENT_DATE;
+CREATE INDEX idx_publicacion_vigentes ON PUBLICACION (fecha_fin_pub) 
+  WHERE fecha_fin_pub >= CURRENT_DATE;
 COMMENT ON INDEX idx_publicacion_vigentes IS 'Filtra solo publicaciones activas';
 
-CREATE INDEX idx_publicacion_calificacion ON PUBLICACION (calif_pond_pub DESC) WHERE calif_pond_pub > 0;
+CREATE INDEX idx_publicacion_calificacion ON PUBLICACION (calif_pond_pub DESC) 
+  WHERE calif_pond_pub > 0;
 COMMENT ON INDEX idx_publicacion_calificacion IS 'Ranking de publicaciones por calificación';
 
 CREATE INDEX idx_publicacion_co2 ON PUBLICACION (impacto_amb_pub ASC);
@@ -22,7 +24,8 @@ COMMENT ON INDEX idx_publicacion_co2 IS 'Ordenar publicaciones por menor huella 
 
 -- INDICES PARA TABLA: PRODUCTO
 
-CREATE INDEX idx_producto_subcat ON PRODUCTO (cod_subcat_prod, estado_prod) WHERE estado_prod = 'disponible';
+CREATE INDEX idx_producto_subcat ON PRODUCTO (cod_subcat_prod, estado_prod) 
+  WHERE estado_prod = 'disponible';
 COMMENT ON INDEX idx_producto_subcat IS 'Productos disponibles por subcategoría';
 
 CREATE INDEX idx_producto_precio ON PRODUCTO (precio_prod);
@@ -30,7 +33,8 @@ COMMENT ON INDEX idx_producto_precio IS 'Filtros de rango de precio (ej: entre $
 
 -- INDICES PARA TABLA: SERVICIO
 
-CREATE INDEX idx_servicio_categoria ON SERVICIO (cod_cat, estado_serv) WHERE estado_serv = 'disponible';
+CREATE INDEX idx_servicio_categoria ON SERVICIO (cod_cat, estado_serv) 
+  WHERE estado_serv = 'disponible';
 COMMENT ON INDEX idx_servicio_categoria IS 'Servicios disponibles por categoría';
 
 CREATE INDEX idx_servicio_precio ON SERVICIO (precio_serv);
@@ -42,7 +46,8 @@ CREATE INDEX idx_transaccion_estado_fecha ON TRANSACCION (estado_trans, fecha_tr
 
 -- INDICES PARA TABLA: EVENTO
 
-CREATE INDEX idx_evento_vigentes ON EVENTO (estado_evento, fecha_inicio_evento) WHERE estado_evento = 'vigente';
+CREATE INDEX idx_evento_vigentes ON EVENTO (estado_evento, fecha_inicio_evento) 
+  WHERE estado_evento = 'vigente';
 COMMENT ON INDEX idx_evento_vigentes IS 'Lista eventos activos ordenados por fecha';
 
 CREATE INDEX idx_evento_fechas ON EVENTO(fecha_inicio_evento, fecha_finalizacion_evento);
@@ -63,3 +68,5 @@ COMMENT ON INDEX idx_material_producto_mat IS 'Productos que usan un material';
 
 CREATE INDEX idx_equiv_co2_material_unidades ON EQUIVALENCIA_CO2 (cod_mat, unidad_origen, unidad_destino);
 COMMENT ON INDEX idx_equiv_co2_material_unidades IS 'Conversiones rápidas de CO2';
+
+CREATE INDEX idx_equiv_co2_material ON EQUIVALENCIA_CO2 (cod_mat);

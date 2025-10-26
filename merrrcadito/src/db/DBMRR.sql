@@ -140,8 +140,8 @@ CREATE TABLE PRODUCTO(
 CREATE TABLE PROMOCION_PRODUCTO(
     cod_subcat_prod INTEGER,
     cod_prom INTEGER,
-    PRIMARY KEY (cod_prod, cod_prom),
-    FOREIGN KEY (cod_prod) 
+    PRIMARY KEY (cod_subcat_prod, cod_prom),
+    FOREIGN KEY (cod_subcat_prod) 
         REFERENCES SUBCATEGORIA_PRODUCTO (cod_subcat_prod)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
@@ -170,8 +170,8 @@ CREATE TABLE RECOMPENSA_LOGRO(
 CREATE TABLE PROMOCION_SERVICIO(
     cod_cat INTEGER,
     cod_prom INTEGER,
-    PRIMARY KEY (cod_serv, cod_prom),
-    FOREIGN KEY (cod_serv) 
+    PRIMARY KEY (cod_cat, cod_prom),
+    FOREIGN KEY (cod_cat) 
         REFERENCES CATEGORIA (cod_cat)
         ON DELETE CASCADE
         ON UPDATE CASCADE,

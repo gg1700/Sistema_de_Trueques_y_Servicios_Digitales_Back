@@ -604,6 +604,7 @@ CREATE TABLE EQUIVALENCIA_CO2(
     factor_conversion DECIMAL(12, 6) NOT NULL,
     descripcion_equiv VARCHAR(200),
     fecha_actualizacion TIMESTAMP DEFAULT NOW(),
+    fuente_datos VARCHAR(200), -- De dónde proviene el dato
     CONSTRAINT UK_equiv_material_unidades UNIQUE(cod_mat, unidad_origen, unidad_destino),
     FOREIGN KEY (cod_mat) 
         REFERENCES MATERIAL(cod_mat)

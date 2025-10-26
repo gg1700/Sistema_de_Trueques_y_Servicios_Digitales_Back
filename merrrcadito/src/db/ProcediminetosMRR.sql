@@ -2,8 +2,15 @@
 
 -- Nota: conéctate ya a la base deseada (Postgres no usa USE/GO).
 
--- 1) Registrar usuario
-CREATE OR REPLACE FUNCTION sp_registrarusuario(
+-- =========================================
+--  1) REGISTRAR USUARIO
+-- =========================================
+
+-- Descripción:
+-- Esta función almacena un nuevo registro en la tabla USUARIO.
+-- Recibe como parámetros los datos personales, credenciales y atributos del usuario.
+-- No realiza validaciones previas ni retorna valores; simplemente ejecuta la inserción.
+CREATE OR REPLACE FUNCTION sp_registrarUsuario(
     _p_cod_rol INT,
     _p_ci VARCHAR(20),
     _p_nom_us VARCHAR(100),
@@ -28,8 +35,15 @@ CREATE OR REPLACE FUNCTION sp_registrarusuario(
     );
 $$;
 
--- 2) Verificar login de usuario (devuelve boolean)
-CREATE OR REPLACE FUNCTION sp_verificarusuariologin(
+-- =========================================
+--  2) VERIFICAR LOGIN DE USUARIO (devuelve boolean)
+-- =========================================
+
+-- Descripción:
+-- Esta función verifica si existen credenciales válidas para iniciar sesión.
+-- Comprueba si el nombre de usuario y la contraseña coinciden con un registro en la tabla USUARIO.
+-- Retorna un valor booleano: TRUE si existe coincidencia, FALSE en caso contrario.
+CREATE OR REPLACE FUNCTION sp_verificarUsuarioLogin(
     _p_handle_name VARCHAR(100),
     _p_contra_us   VARCHAR(100)
 ) RETURNS boolean LANGUAGE sql AS $$
@@ -41,21 +55,67 @@ CREATE OR REPLACE FUNCTION sp_verificarusuariologin(
     );
 $$;
 
--- 3) Actualizar usuario (nombre, correo, teléfono)
-CREATE OR REPLACE FUNCTION sp_actualizarusuario(
-    _p_cod_us INTEGER,
-    _p_nom_us VARCHAR(100) DEFAULT NULL,
-    _p_correo_us VARCHAR(100) DEFAULT NULL,
-    _p_telefono_us VARCHAR(20) DEFAULT NULL
+-- =========================================
+--  3) ACTUALIZAR USUARIO (nombre, correo, teléfono...)
+-- =========================================
+
+-- Descripción:
+-- Esta función actualiza los datos básicos de un usuario en la tabla USUARIO.
+-- Permite modificar el nombre, correo electrónico, número de teléfono, etc de un usuario específico.
+-- Si alguno de los parámetros es NULL, se conserva el valor actual en la base de datos.
+CREATE OR REPLACE FUNCTION sp_actualizarUsuario(
+   _p_id_us INTEGER,
+   _p_nom_us VARCHAR(100) DEFAULT NULL,
+   _p_handle_name VARCHAR(50),
+   _p_ap_pat_us VARCHAR(50),
+   _p_ap_mat_us VARCHAR(50),
+   _p_correo_us VARCHAR(100) DEFAULT NULL,
+   _p_telefono_us VARCHAR(20) DEFAULT NULL,
+   _p_foto_us BYTEA
 ) RETURNS void LANGUAGE sql AS $$
-    UPDATE USUARIO
-       SET nom_us     = COALESCE(_p_nom_us, nom_us),
-           correo_us  = COALESCE(_p_correo_us, correo_us),
-           telefono_us= COALESCE(_p_telefono_us, telefono_us)
-     WHERE cod_us = _p_cod_us;
+   UPDATE USUARIO
+      SET nom_us     = COALESCE(_p_nom_us, nom_us),
+          correo_us  = COALESCE(_p_correo_us, correo_us),
+          telefono_us= COALESCE(_p_telefono_us, telefono_us),
+          handle_name= COALESCE(_p_handle_name, handle_name),
+          ap_pat_name= COALESCE(_p_ap_pat_us, ap_pat_us),
+          ap_mat_name= COALESCE(_p_ap_mat_us,ap_mat_us),
+          foto_us= COALESCE(_p_foto_us, foto_us)
+    WHERE id_us = _p_id_us;
 $$;
 
--- 4) Registrar Promoción (calcula duración)
+--4
+CREATE OR REPLACE PROCEDURE sp_registrarCategoria(
+   _p_nom_cat VARCHAR(100),
+    _p_descr_cat VARCHAR(200),
+    _p_imagen_repr BYTEA,
+    _p_tipo_cat VARCHAR(20)
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    INSERT INTO CATEGORIA (
+        nom_cat,
+        descr_cat,
+        imagen_repr,
+        tipo_cat
+    ) VALUES (
+        p_nom_cat,
+        p_descr_cat,
+        p_imagen_repr,
+        p_tipo_cat
+    );
+END;
+$$;
+
+-- =========================================
+--  4) REGISTRAR CATEGORÍA
+-- =========================================
+
+-- Descripción:
+-- Este procedimiento almacena una nueva categoría en la tabla CATEGORIA.
+-- Recibe como parámetros el nombre, descripción, imagen representativa y tipo de categoría.
+-- No realiza validaciones previas ni retorna valores; simplemente ejecuta la inserción.
 CREATE OR REPLACE FUNCTION sp_registrarpromocion(
     _p_titulo_prom VARCHAR(100),
     _p_fecha_ini_prom TIMESTAMP,
@@ -79,7 +139,306 @@ CREATE OR REPLACE FUNCTION sp_registrarpromocion(
     );
 $$;
 
--- 5) Obtener promociones (productos + servicios)
+-- =========================================
+--  5) VER CATEGORÍA SELECCIONADA
+-- =========================================
+
+-- Descripción:
+-- Esta función retorna los datos completos de una categoría específica registrada en la tabla CATEGORIA.
+-- Utiliza el código de categoría como parámetro de búsqueda y devuelve una fila con sus atributos.
+CREATE OR REPLACE FUNCTION sp_verCategoria(_p_cod_cat INT)
+RETURNS TABLE(
+    cod_cat INT, nom_cat VARCHAR, descr_cat VARCHAR, imagen_repr BYTEA, tipo_cat VARCHAR
+) LANGUAGE sql AS $$
+    SELECT c.cod_cat, c.nom_cat, c.descr_cat, c.imagen_repr, c.tipo_cat
+    FROM CATEGORIA c
+    WHERE c.cod_cat = _p_cod_cat
+$$;
+
+-- =========================================
+--  6) LISTAR CATEGORÍAS DE PRODUCTO
+-- =========================================
+
+-- Descripción:
+-- Esta función retorna una lista de todas las categorías cuyo tipo sea 'producto'.
+-- Filtra los registros de la tabla CATEGORIA comparando el campo tipo_cat (en minúsculas) con el valor 'producto'.
+-- Devuelve únicamente el código y el nombre de cada categoría, ordenados por su código.
+CREATE OR REPLACE FUNCTION sp_getCategoriasProducto()
+RETURNS TABLE(cod_cat INT, nom_cat VARCHAR) LANGUAGE sql AS $$
+    SELECT c.cod_cat, c.nom_cat
+    FROM CATEGORIA c
+    WHERE LOWER(c.tipo_cat) = 'producto'
+    ORDER BY c.cod_cat
+$$;
+
+-- =========================================
+--  7) LISTAR CATEGORÍAS DE SERVICIO
+-- =========================================
+
+-- Descripción:
+-- Esta función retorna una lista de todas las categorías cuyo tipo sea 'servicio'.
+-- Filtra los registros de la tabla CATEGORIA comparando el campo tipo_cat (en minúsculas) con el valor 'servicio'.
+-- Devuelve únicamente el código y el nombre de cada categoría, ordenados por su código.
+CREATE OR REPLACE FUNCTION sp_getCategoriasServicio()
+RETURNS TABLE(cod_cat INT, nom_cat VARCHAR) LANGUAGE sql AS $$
+    SELECT c.cod_cat, c.nom_cat
+    FROM CATEGORIA c
+    WHERE LOWER(c.tipo_cat) = 'servicio'
+    ORDER BY c.cod_cat
+$$;
+
+-- =========================================
+--  8) ACTUALIZAR CATEGORÍA
+-- =========================================
+
+-- Descripción:
+-- Esta función actualiza los datos de una categoría existente en la tabla CATEGORIA.
+-- Permite modificar el nombre, descripción, imagen representativa y tipo de categoría.
+-- Si alguno de los parámetros es NULL, se conserva el valor actual en la base de datos.
+CREATE OR REPLACE FUNCTION sp_actualizarcategoria(
+    _p_cod_cat INT,
+    _p_nom_cat VARCHAR(100) DEFAULT NULL,
+    _p_descr_cat VARCHAR(200) DEFAULT NULL,
+    _p_imagen_repr BYTEA DEFAULT NULL,
+    _p_tipo_cat VARCHAR(20) DEFAULT NULL
+) RETURNS void LANGUAGE sql AS $$
+    UPDATE CATEGORIA
+       SET nom_cat     = COALESCE(_p_nom_cat, nom_cat),
+           descr_cat   = COALESCE(_p_descr_cat, descr_cat),
+           imagen_repr = COALESCE(_p_imagen_repr, imagen_repr),
+           tipo_cat    = COALESCE(_p_tipo_cat, tipo_cat)
+     WHERE cod_cat = _p_cod_cat;
+$$;
+
+-- =========================================
+--  9) REGISTRAR SUBCATEGORÍA DE PRODUCTO
+-- =========================================
+
+-- Descripción:
+-- Este procedimiento registra una nueva subcategoría asociada a una categoría de tipo producto.
+-- Inserta los datos en la tabla SUBCATEGORIA_PRODUCTO, incluyendo nombre, descripción e imagen representativa
+CREATE OR REPLACE PROCEDURE sp_registrarSubcategoriaProducto(
+    _p_cod_cat INTEGER,
+    _p_nom_subcat_prod VARCHAR(100),
+    _p_descr_subcat_prod VARCHAR(200),
+    _p_imagen_representativa BYTEA
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    INSERT INTO SUBCATEGORIA_PRODUCTO (
+        cod_cat,
+        nom_subcat_prod,
+        descr_subcat_prod,
+        imagen_representativa
+    ) VALUES (
+        p_cod_cat,
+        p_nom_subcat_prod,
+        p_descr_subcat_prod,
+        p_imagen_representativa
+    );
+END;
+$$;
+
+-- =========================================
+-- 10) LISTAR SUBCATEGORÍAS
+-- =========================================
+
+-- Descripción:
+-- Esta función retorna una lista de todas las subcategorías registradas en la tabla SUBCATEGORIA_PRODUCTO.
+-- Devuelve el código de subcategoría, su nombre y el código de la categoría a la que pertenece.
+-- Los resultados se ordenan por el código de categoría.
+CREATE OR REPLACE FUNCTION sp_getSubcategorias()
+RETURNS TABLE(
+    cod_subcat_prod INT,
+    nom_subcat_prod VARCHAR,
+    cod_cat INT
+) LANGUAGE sql AS $$
+    SELECT sub.cod_subcat_prod, sub.nom_subcat_prod, sub.cod_cat
+    FROM SUBCATEGORIA_PRODUCTO sub
+    ORDER BY sub.cod_cat
+$$;
+
+-- =========================================
+-- 11) VER SUBCATEGORÍA
+-- =========================================
+
+-- Descripción:
+-- Esta función retorna los datos completos de una subcategoría específica de producto.
+-- Realiza una unión entre las tablas SUBCATEGORIA_PRODUCTO y CATEGORIA para incluir el nombre de la categoría asociada.
+-- Devuelve una fila con los atributos principales de la subcategoría.
+CREATE OR REPLACE FUNCTION sp_verSubcategoria(_p_cod_subcat_prod INT)
+RETURNS TABLE(
+    cod_subcat_prod INT,
+    nom_subcat_prod VARCHAR,
+    nom_cat VARCHAR,
+    descr_subcat_prod VARCHAR,
+    imagen_representativa BYTEA
+) LANGUAGE sql AS $$
+    SELECT sub.cod_subcat_prod, sub.nom_subcat_prod, c.nom_cat,
+           sub.descr_subcat_prod, sub.imagen_representativa
+    FROM SUBCATEGORIA_PRODUCTO sub
+    JOIN CATEGORIA c ON c.cod_cat = sub.cod_cat
+    WHERE sub.cod_subcat_prod = _p_cod_subcat_prod
+$$;
+
+-- =========================================
+-- 12) ACTUALIZAR SUBCATEGORÍA
+-- =========================================
+
+-- Descripción:
+-- Esta función actualiza los datos de una subcategoría de producto en la tabla SUBCATEGORIA_PRODUCTO.
+-- Permite modificar el nombre, descripción, imagen representativa y categoría asociada.
+-- Si alguno de los parámetros es NULL, se conserva el valor actual en la base de datos.
+CREATE OR REPLACE FUNCTION sp_actualizarsubcategoria(
+    _p_cod_subcat_prod INT,
+    _p_cod_cat INT DEFAULT NULL,
+    _p_nom_subcat_prod VARCHAR(100) DEFAULT NULL,
+    _p_imagen_representativa BYTEA DEFAULT NULL,
+    _p_descr_subcat_prod VARCHAR(200) DEFAULT NULL
+) RETURNS void LANGUAGE sql AS $$
+    UPDATE SUBCATEGORIA_PRODUCTO
+       SET cod_cat               = COALESCE(_p_cod_cat, cod_cat),
+           nom_subcat_prod       = COALESCE(_p_nom_subcat_prod, nom_subcat_prod),
+           imagen_representativa = COALESCE(_p_imagen_representativa, imagen_representativa),
+           descr_subcat_prod     = COALESCE(_p_descr_subcat_prod, descr_subcat_prod)
+     WHERE cod_subcat_prod = _p_cod_subcat_prod;
+$$;
+
+-- =========================================
+-- 13) LISTAR SUBCATEGORÍAS DE UNA CATEGORÍA
+-- =========================================
+
+-- Descripción:
+-- Esta función retorna todas las subcategorías asociadas a una categoría específica.
+-- Filtra los registros de la tabla SUBCATEGORIA_PRODUCTO según el código de categoría recibido como parámetro.
+-- Devuelve el código, nombre e imagen representativa de cada subcategoría.
+CREATE OR REPLACE FUNCTION sp_getSubcategoriasDeCategoria(_p_cod_cat INT)
+RETURNS TABLE(
+    cod_subcat_prod INT,
+    nom_subcat_prod VARCHAR,
+    imagen_representativa BYTEA
+) LANGUAGE sql AS $$
+    SELECT cod_subcat_prod, nom_subcat_prod, imagen_representativa
+    FROM SUBCATEGORIA_PRODUCTO
+    WHERE cod_cat = _p_cod_cat
+$$;
+
+-- =========================================
+-- 14) REGISTRAR PUBLICACIÓN DE PRODUCTO
+-- =========================================
+
+-- Descripción:
+-- Esta función registra un nuevo producto y lo asocia a una publicación.
+-- Inserta datos en las tablas PRODUCTO, MATERIAL_PRODUCTO, PUBLICACION y PUBLICACION_PRODUCTO.
+-- La publicación se genera con una duración de 1 mes desde la fecha actual.
+-- El proceso incluye la creación del producto, su vínculo con el material, la publicación y el detalle de cantidad y unidad.
+CREATE OR REPLACE FUNCTION sp_registrarPublicacionProducto(
+  _p_id_us INTEGER,
+  _p_foto_pub BYTEA,
+  _p_cod_cat INTEGER,
+  _p_cod_subcat_prod INTEGER,
+  _p_nom_prod VARCHAR(100),
+  _p_estado_prod VARCHAR(20),
+  _p_precio_prod DECIMAL(10,2),
+  _p_id_mat INTEGER,
+  _p_peso_prod DECIMAL(10,2),
+  _p_marca_prod VARCHAR(50),
+  _p_desc_prod VARCHAR(200),
+  _p_cant_prod INTEGER,
+  _p_unidad_medida VARCHAR(20)
+)
+RETURNS VOID AS $$
+DECLARE
+  pp_id_prod INTEGER;
+  pp_cod_pub INTEGER;
+  p_fecha_ini_pub DATE := CURRENT_DATE;
+  p_fecha_fin_pub DATE := CURRENT_DATE + INTERVAL '1 month';
+BEGIN
+  
+  BEGIN
+   
+    INSERT INTO PRODUCTO(
+      cod_subcat_prod, nom_prod, estado_prod, precio_prod, 
+      peso_prod, marca_prod, desc_prod
+    ) VALUES(
+      p_cod_subcat_prod, p_nom_prod, p_estado_prod, p_precio_prod,
+      p_peso_prod, p_marca_prod, p_desc_prod
+    ) RETURNING id_prod INTO pp_id_prod;
+
+    INSERT INTO MATERIAL_PRODUCTO(id_mat, id_prod)
+    VALUES(p_id_mat, pp_id_prod);
+
+    INSERT INTO PUBLICACION(
+      id_us, fecha_ini_pub, fecha_fin_pub, foto_pub
+    ) VALUES(
+      p_id_us, p_fecha_ini_pub, p_fecha_fin_pub, p_foto_pub
+    ) RETURNING cod_pub INTO pp_cod_pub;
+    INSERT INTO PUBLICACION_PRODUCTO(
+      cod_pub, id_prod, cant_prod, unidad_medida
+    ) VALUES(
+      pp_cod_pub, pp_id_prod, p_cant_prod, p_unidad_medida
+    );
+    COMMIT;
+END;
+$$ LANGUAGE plpgsql;
+
+-- =========================================
+-- 15) REGISTRAR PUBLICACIÓN DE SERVICIO
+-- =========================================
+
+-- Descripción:
+-- Este procedimiento registra un nuevo servicio y lo asocia a una publicación.
+-- Inserta datos en las tablas SERVICIO, PUBLICACION y PUBLICACION_SERVICIO.
+-- Calcula la duración del servicio en minutos a partir del horario de inicio y fin.
+-- La publicación se genera con una duración de 1 mes desde la fecha actual.
+CREATE OR REPLACE PROCEDURE sp_registrarPublicacionServicio(
+    _p_foto_pub BYTEA,
+    _p_id_us INTEGER,
+    _p_cod_cat INTEGER,
+    _p_nom_serv VARCHAR(100),
+    _p_desc_serv VARCHAR(200),
+    _p_precio_serv NUMERIC(10, 2),
+    _p_hrs_ini_dia_serv TIME,
+    _p_hrs_fin_dia_serv TIME
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    pp_id_serv INTEGER;
+    pp_cod_pub INTEGER;
+    p_duracion_serv INTEGER := EXTRACT(EPOCH FROM (p_hrs_fin_dia_serv - p_hrs_ini_dia_serv)) / 60;
+    p_fecha_ini_pub DATE := CURRENT_DATE;
+    p_fecha_fin_pub DATE := CURRENT_DATE + INTERVAL '1 month';
+BEGIN
+    BEGIN
+        INSERT INTO SERVICIO (
+            nom_serv, desc_serv, precio_serv, cod_cat, duracion_serv
+        ) VALUES (
+            p_nom_serv, p_desc_serv, p_precio_serv, p_cod_cat, p_duracion_serv
+        )
+        RETURNING id_serv INTO pp_id_serv;
+
+        INSERT INTO PUBLICACION (
+            id_us, foto_pub, fecha_ini_pub, fecha_fin_pub
+        ) VALUES (
+            p_id_us, p_foto_pub, p_fecha_ini_pub, p_fecha_fin_pub
+        )
+        RETURNING cod_pub INTO pp_cod_pub;
+
+        INSERT INTO PUBLICACION_SERVICIO (
+            id_serv, cod_pub, hrs_ini_dia_serv, hrs_fin_dia_serv
+        ) VALUES (
+            pp_id_serv, pp_cod_pub, p_hrs_ini_dia_serv, p_hrs_fin_dia_serv
+        );
+
+        COMMIT;
+END;
+$$;
+
+
+
+-- 16) Obtener promociones (productos + servicios)
 CREATE OR REPLACE FUNCTION sp_getpromocionesactivas()
 RETURNS TABLE(
     cod_prom INT,
@@ -113,6 +472,53 @@ RETURNS TABLE(
     JOIN SERVICIO s ON ps.id_serv = s.id_serv
 $$;
 
+-- =========================================
+-- 18) REGISTRAR EVENTO
+-- =========================================
+
+-- Descripción:
+-- Esta función registra un nuevo evento en la tabla EVENTO.
+-- Calcula automáticamente la duración del evento en días a partir de la fecha de inicio y finalización.
+-- También registra la fecha actual como fecha de creación del evento.
+CREATE OR REPLACE FUNCTION sp_registrarEvento(
+    _p_id_org INT,
+    _p_titulo_evento VARCHAR(100),
+    _p_descripcion_evento VARCHAR(200),
+    _p_fecha_inicio_evento DATE,
+    _p_fecha_finalizacion_evento DATE,
+    _p_tipo_evento VARCHAR(20)
+) RETURNS void LANGUAGE sql AS $$
+    INSERT INTO EVENTO(
+        id_org, titulo_evento, descripcion_evento, fecha_registro_evento,
+        fecha_inicio_evento, fecha_finalizacion_evento, duracion_evento, tipo_evento
+    )
+    VALUES(
+        _p_id_org, _p_titulo_evento, _p_descripcion_evento, NOW(),
+        _p_fecha_inicio_evento, _p_fecha_finalizacion_evento,
+        CAST(DATE_PART('day', _p_fecha_finalizacion_evento::timestamp - _p_fecha_inicio_evento::timestamp) AS INTEGER),
+        _p_tipo_evento
+    );
+$$;
+
+-- =========================================
+-- 19) HISTORIAL DE TRANSACCIONES DE USUARIO
+-- =========================================
+
+-- Descripción:
+-- Esta función retorna todas las transacciones en las que ha participado un usuario específico.
+-- Filtra los registros de la tabla TRANSACCION donde el usuario aparece como origen o destino.
+-- Devuelve el conjunto completo de columnas definidas en la tabla TRANSACCION.
+CREATE OR REPLACE FUNCTION sp_historiatransaccionesusuario(
+    _p_id_us INT
+) RETURNS SETOF TRANSACCION LANGUAGE sql AS $$
+    SELECT *
+    FROM TRANSACCION
+    WHERE id_us_destino = _p_id_us
+       OR id_us_origen  = _p_id_us
+$$;
+
+
+
 -- 6) Publicaciones de un usuario
 CREATE OR REPLACE FUNCTION sp_getpublicacionesusuario(
     _p_id_usuario INT
@@ -143,27 +549,6 @@ CREATE OR REPLACE FUNCTION sp_getpublicacionesusuario(
     ORDER BY p.fecha_ini_pub DESC
 $$;
 
--- 7) Registrar evento
-CREATE OR REPLACE FUNCTION sp_registrarevento(
-    _p_id_org INT,
-    _p_titulo_evento VARCHAR(100),
-    _p_descripcion_evento VARCHAR(200),
-    _p_fecha_inicio_evento DATE,
-    _p_fecha_finalizacion_evento DATE,
-    _p_tipo_evento VARCHAR(20)
-) RETURNS void LANGUAGE sql AS $$
-    INSERT INTO EVENTO(
-        id_org, titulo_evento, descripcion_evento, fecha_registro_evento,
-        fecha_inicio_evento, fecha_finalizacion_evento, duracion_evento, tipo_evento
-    )
-    VALUES(
-        _p_id_org, _p_titulo_evento, _p_descripcion_evento, NOW(),
-        _p_fecha_inicio_evento, _p_fecha_finalizacion_evento,
-        CAST(DATE_PART('day', _p_fecha_finalizacion_evento::timestamp - _p_fecha_inicio_evento::timestamp) AS INTEGER),
-        _p_tipo_evento
-    );
-$$;
-
 -- 8) Participar en evento
 CREATE OR REPLACE FUNCTION sp_participarevento(
     _p_id_us INT,
@@ -189,94 +574,6 @@ RETURNS SETOF EVENTO LANGUAGE sql AS $$
     SELECT *
     FROM EVENTO
     WHERE estado_evento = 'vigente'
-$$;
-
--- 11) Listar categorías de PRODUCTO
-CREATE OR REPLACE FUNCTION sp_getcategoriasproducto()
-RETURNS TABLE(cod_cat INT, nom_cat VARCHAR) LANGUAGE sql AS $$
-    SELECT c.cod_cat, c.nom_cat
-    FROM CATEGORIA c
-    WHERE LOWER(c.tipo_cat) = 'producto'
-    ORDER BY c.cod_cat
-$$;
-
--- 12) Listar categorías de SERVICIO
-CREATE OR REPLACE FUNCTION sp_getcategoriasservicio()
-RETURNS TABLE(cod_cat INT, nom_cat VARCHAR) LANGUAGE sql AS $$
-    SELECT c.cod_cat, c.nom_cat
-    FROM CATEGORIA c
-    WHERE LOWER(c.tipo_cat) = 'servicio'
-    ORDER BY c.cod_cat
-$$;
-
--- 13) Ver categoría seleccionada
-CREATE OR REPLACE FUNCTION sp_vercategoria(_p_cod_cat INT)
-RETURNS TABLE(
-    cod_cat INT, nom_cat VARCHAR, descr_cat VARCHAR, imagen_repr BYTEA, tipo_cat VARCHAR
-) LANGUAGE sql AS $$
-    SELECT c.cod_cat, c.nom_cat, c.descr_cat, c.imagen_repr, c.tipo_cat
-    FROM CATEGORIA c
-    WHERE c.cod_cat = _p_cod_cat
-$$;
-
--- 14) Actualizar categoría
-CREATE OR REPLACE FUNCTION sp_actualizarcategoria(
-    _p_cod_cat INT,
-    _p_nom_cat VARCHAR(100) DEFAULT NULL,
-    _p_descr_cat VARCHAR(200) DEFAULT NULL,
-    _p_imagen_repr BYTEA DEFAULT NULL,
-    _p_tipo_cat VARCHAR(20) DEFAULT NULL
-) RETURNS void LANGUAGE sql AS $$
-    UPDATE CATEGORIA
-       SET nom_cat     = COALESCE(_p_nom_cat, nom_cat),
-           descr_cat   = COALESCE(_p_descr_cat, descr_cat),
-           imagen_repr = COALESCE(_p_imagen_repr, imagen_repr),
-           tipo_cat    = COALESCE(_p_tipo_cat, tipo_cat)
-     WHERE cod_cat = _p_cod_cat;
-$$;
-
--- 15) Listar subcategorías
-CREATE OR REPLACE FUNCTION sp_getsubcategorias()
-RETURNS TABLE(
-    cod_subcat_prod INT,
-    nom_subcat_prod VARCHAR,
-    cod_cat INT
-) LANGUAGE sql AS $$
-    SELECT sub.cod_subcat_prod, sub.nom_subcat_prod, sub.cod_cat
-    FROM SUBCATEGORIA_PRODUCTO sub
-    ORDER BY sub.cod_cat
-$$;
-
--- 16) Ver subcategoría
-CREATE OR REPLACE FUNCTION sp_versubcategoria(_p_cod_subcat_prod INT)
-RETURNS TABLE(
-    cod_subcat_prod INT,
-    nom_subcat_prod VARCHAR,
-    nom_cat VARCHAR,
-    descr_subcat_prod VARCHAR,
-    imagen_representativa BYTEA
-) LANGUAGE sql AS $$
-    SELECT sub.cod_subcat_prod, sub.nom_subcat_prod, c.nom_cat,
-           sub.descr_subcat_prod, sub.imagen_representativa
-    FROM SUBCATEGORIA_PRODUCTO sub
-    JOIN CATEGORIA c ON c.cod_cat = sub.cod_cat
-    WHERE sub.cod_subcat_prod = _p_cod_subcat_prod
-$$;
-
--- 17) Actualizar subcategoría
-CREATE OR REPLACE FUNCTION sp_actualizarsubcategoria(
-    _p_cod_subcat_prod INT,
-    _p_cod_cat INT DEFAULT NULL,
-    _p_nom_subcat_prod VARCHAR(100) DEFAULT NULL,
-    _p_imagen_representativa BYTEA DEFAULT NULL,
-    _p_descr_subcat_prod VARCHAR(200) DEFAULT NULL
-) RETURNS void LANGUAGE sql AS $$
-    UPDATE SUBCATEGORIA_PRODUCTO
-       SET cod_cat               = COALESCE(_p_cod_cat, cod_cat),
-           nom_subcat_prod       = COALESCE(_p_nom_subcat_prod, nom_subcat_prod),
-           imagen_representativa = COALESCE(_p_imagen_representativa, imagen_representativa),
-           descr_subcat_prod     = COALESCE(_p_descr_subcat_prod, descr_subcat_prod)
-     WHERE cod_subcat_prod = _p_cod_subcat_prod;
 $$;
 
 -- 18) Listar subcategorías de una categoría

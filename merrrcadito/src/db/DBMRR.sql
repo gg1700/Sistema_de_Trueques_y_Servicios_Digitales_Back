@@ -138,11 +138,11 @@ CREATE TABLE PRODUCTO(
 
 --Revisado y Movido
 CREATE TABLE PROMOCION_PRODUCTO(
-    cod_prod INTEGER,
+    cod_subcat_prod INTEGER,
     cod_prom INTEGER,
     PRIMARY KEY (cod_prod, cod_prom),
     FOREIGN KEY (cod_prod) 
-        REFERENCES PRODUCTO (cod_prod)
+        REFERENCES SUBCATEGORIA_PRODUCTO (cod_subcat_prod)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
     FOREIGN KEY (cod_prom) 
@@ -168,11 +168,11 @@ CREATE TABLE RECOMPENSA_LOGRO(
 
 --Revisado y Movido
 CREATE TABLE PROMOCION_SERVICIO(
-    cod_serv INTEGER,
+    cod_cat INTEGER,
     cod_prom INTEGER,
     PRIMARY KEY (cod_serv, cod_prom),
     FOREIGN KEY (cod_serv) 
-        REFERENCES SERVICIO (cod_serv)
+        REFERENCES CATEGORIA (cod_cat)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
     FOREIGN KEY (cod_prom) 

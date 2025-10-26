@@ -43,7 +43,7 @@ $$;
 
 -- 3) Actualizar usuario (nombre, correo, teléfono)
 CREATE OR REPLACE FUNCTION sp_actualizarusuario(
-    _p_id_us INTEGER,
+    _p_cod_us INTEGER,
     _p_nom_us VARCHAR(100) DEFAULT NULL,
     _p_correo_us VARCHAR(100) DEFAULT NULL,
     _p_telefono_us VARCHAR(20) DEFAULT NULL
@@ -52,7 +52,7 @@ CREATE OR REPLACE FUNCTION sp_actualizarusuario(
        SET nom_us     = COALESCE(_p_nom_us, nom_us),
            correo_us  = COALESCE(_p_correo_us, correo_us),
            telefono_us= COALESCE(_p_telefono_us, telefono_us)
-     WHERE id_us = _p_id_us;
+     WHERE cod_us = _p_cod_us;
 $$;
 
 -- 4) Registrar Promoción (calcula duración)

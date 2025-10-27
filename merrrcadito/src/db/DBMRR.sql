@@ -1,11 +1,5 @@
-<<<<<<< HEAD
 
-
---Revisado
-
-=======
 --Revisado y Movido
->>>>>>> 4aa1cf57878306fdb7e138e9eafcbbec1304716f
 CREATE TABLE ORGANIZACION(
     cod_org INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nom_com_org VARCHAR(100) NOT NULL,
@@ -31,12 +25,8 @@ CREATE TABLE ADVERTENCIA(
     CONSTRAINT CK_motivo_adv CHECK (motivo_adv IN ('incumplimiento','contenido indebido','lenguaje inapropiado'))
 );
 
-<<<<<<< HEAD
-
---Revisado
-=======
 --Revisado y Movido
->>>>>>> 4aa1cf57878306fdb7e138e9eafcbbec1304716f
+
 CREATE TABLE ROL(
     cod_rol INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nom_rol VARCHAR(50) UNIQUE NOT NULL,
@@ -67,7 +57,6 @@ CREATE TABLE PROMOCION(
 --Revisado y Movido
 CREATE TABLE RECOMPENSA(
     cod_rec INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-
     monto_rec DECIMAL(12, 2) NOT NULL DEFAULT 0.0
 );
 
@@ -80,17 +69,11 @@ CREATE TABLE MATERIAL(
     unidad_medida_co2 VARCHAR(20) DEFAULT 'kg'
 );
 
-<<<<<<< HEAD
-
---Revisado
-=======
 --Revisado y Movido
->>>>>>> 4aa1cf57878306fdb7e138e9eafcbbec1304716f
 CREATE TABLE LOGRO(
     cod_logro INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     titulo_logro VARCHAR(100) UNIQUE NOT NULL,
     descr_logro VARCHAR(200),
-
     icono_logro BYTEA NOT NULL,
     calidad_logro VARCHAR(20) NOT NULL,
     CONSTRAINT CK_calidad_logro CHECK (calidad_logro IN ('Legendario','Epico','Especial','Comun'))
@@ -106,12 +89,7 @@ CREATE TABLE CATEGORIA(
     CONSTRAINT CK_tipo_cat CHECK (tipo_cat IN ('Producto','Servicio'))
 );
 
-<<<<<<< HEAD
-
---Revisado
-=======
 --Revisado y Movido
->>>>>>> 4aa1cf57878306fdb7e138e9eafcbbec1304716f
 CREATE TABLE SUBCATEGORIA_PRODUCTO(
     cod_subcat_prod INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     cod_cat INTEGER,
@@ -124,12 +102,7 @@ CREATE TABLE SUBCATEGORIA_PRODUCTO(
         ON UPDATE CASCADE
 );
 
-<<<<<<< HEAD
-
---Revisado
-=======
 --Revisado y Movido
->>>>>>> 4aa1cf57878306fdb7e138e9eafcbbec1304716f
 CREATE TABLE SERVICIO(
     cod_serv INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     cod_cat INTEGER,
@@ -146,12 +119,7 @@ CREATE TABLE SERVICIO(
         ON UPDATE CASCADE
 );
 
-<<<<<<< HEAD
-
---Revisado
-=======
 --Revisado y Movido
->>>>>>> 4aa1cf57878306fdb7e138e9eafcbbec1304716f
 CREATE TABLE PRODUCTO(
     cod_prod INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     cod_subcat_prod INTEGER,
@@ -185,12 +153,7 @@ CREATE TABLE PROMOCION_PRODUCTO(
         ON UPDATE CASCADE
 );
 
-<<<<<<< HEAD
-
---Revisado
-=======
 --Revisado y Movido
->>>>>>> 4aa1cf57878306fdb7e138e9eafcbbec1304716f
 CREATE TABLE RECOMPENSA_LOGRO(
     cod_logro INTEGER,
     cod_rec INTEGER,
@@ -220,12 +183,7 @@ CREATE TABLE PROMOCION_SERVICIO(
         ON UPDATE CASCADE
 );
 
-<<<<<<< HEAD
-
---Revisado
-=======
 --Revisado y Movido
->>>>>>> 4aa1cf57878306fdb7e138e9eafcbbec1304716f
 CREATE TABLE MATERIAL_PRODUCTO(
     cod_mat INTEGER,
     cod_prod INTEGER,
@@ -240,12 +198,7 @@ CREATE TABLE MATERIAL_PRODUCTO(
         ON UPDATE CASCADE
 );
 
-<<<<<<< HEAD
-
---Revisado
-=======
 --Revisado y Movido
->>>>>>> 4aa1cf57878306fdb7e138e9eafcbbec1304716f
 CREATE TABLE EVENTO(
     cod_evento INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     cod_org INTEGER,
@@ -260,13 +213,8 @@ CREATE TABLE EVENTO(
     ganancia_evento DECIMAL(12,2) NOT NULL DEFAULT 0,
     estado_evento VARCHAR(20) NOT NULL,
     tipo_evento VARCHAR(20) NOT NULL,
-<<<<<<< HEAD
-    costo_inscripcion DECIMAL(12,2) NOT NULL DEFAULT 0,  --MODIFICACION
-    CONSTRAINT CK_tipo_evento CHECK (tipo_evento IN ('BENEFICO','MONETIZABLE')),
-=======
     costo_inscripcion DECIMAL(12,2) NOT NULL DEFAULT 0,
     CONSTRAINT CK_tipo_evento CHECK (tipo_evento IN ('benefico','monetizable')),
->>>>>>> 4aa1cf57878306fdb7e138e9eafcbbec1304716f
     CONSTRAINT CK_estado_evento CHECK (estado_evento IN ('vigente','finalizado')),
     FOREIGN KEY (cod_org) 
         REFERENCES ORGANIZACION(cod_org)
@@ -274,12 +222,7 @@ CREATE TABLE EVENTO(
         ON UPDATE CASCADE
 );
 
-<<<<<<< HEAD
-
---Revisado
-=======
 --Revisado y Movido
->>>>>>> 4aa1cf57878306fdb7e138e9eafcbbec1304716f
 CREATE TABLE EVENTO_RECOMPENSA(
     cod_evento INTEGER,
     cod_rec INTEGER,
@@ -294,180 +237,9 @@ CREATE TABLE EVENTO_RECOMPENSA(
         ON UPDATE CASCADE
 );
 
-<<<<<<< HEAD
---Revisado
-CREATE TABLE BILLETERA(
-    cod_bill INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    cod_us INTEGER,
-    cuenta_bancaria VARCHAR(50) UNIQUE NOT NULL,
-    saldo_actual DECIMAL(12,2) NOT NULL DEFAULT 0,
-    FOREIGN KEY (cod_us) REFERENCES USUARIO(cod_us)
-);
-
---Revisado
-CREATE TABLE UBICACION(
-    cod_ubi INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    cod_us  INTEGER,
-    latitud_ubi DECIMAL(10,6) NOT NULL DEFAULT 0.0,
-    longitud_ubi DECIMAL(10,6) NOT NULL DEFAULT 0.0,
-    nom_ubi VARCHAR(100) NOT NULL,
-    FOREIGN KEY (cod_us) REFERENCES USUARIO(cod_us)
-);
-
---Revisado
-CREATE TABLE USUARIO(
-    cod_us INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    cod_rol INTEGER,
-    cod_disp INTEGER,
-    ci VARCHAR(20) UNIQUE NOT NULL,
-    nom_us VARCHAR(100) NOT NULL,
-    handle_name VARCHAR(50) UNIQUE NOT NULL,
-    ap_pat_us VARCHAR(50) NOT NULL,
-    ap_mat_us VARCHAR(50) NOT NULL,
-    contra_us VARCHAR(100) UNIQUE NOT NULL,
-    fecha_nacimiento DATE,
-    sexo CHAR(1) NOT NULL,
-    estado_us VARCHAR(20) NOT NULL,
-    correo_us VARCHAR(100) NOT NULL,
-    telefono_us VARCHAR(20) NOT NULL,
-    foto_us BYTEA,
-    CONSTRAINT CK_estado_us CHECK (estado_us IN ('activo','suspendido','inactivo')),
-    CONSTRAINT CK_sexo CHECK (sexo IN ('M','F')),
-    FOREIGN KEY (cod_rol) REFERENCES ROL(cod_rol),
-    FOREIGN KEY (cod_disp) REFERENCES DISPONIBILIDAD(cod_disp)
-);
-
---Revisado
-CREATE TABLE ACCESO(
-    cod_acc INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    cod_us INTEGER,
-    estado_acc VARCHAR(20) NOT NULL,
-    fecha_acc TIMESTAMP NOT NULL,
-    contra_acc VARCHAR(100) NOT NULL,
-    CONSTRAINT CK_estado_acc CHECK (estado_acc IN ('exitoso','no exitoso','logout')),
-    FOREIGN KEY (cod_us) REFERENCES USUARIO(cod_us)
-);
-
---Revisado
-CREATE TABLE DETALLE_USUARIO(
-    cod_us INTEGER PRIMARY KEY,
-    cant_adv INTEGER NOT NULL DEFAULT 0,
-    fecha_registro TIMESTAMP NOT NULL,
-    cant_hrs_libres INTEGER NOT NULL DEFAULT 0,
-    cant_dias_libres INTEGER NOT NULL DEFAULT 0,
-
-    dias_ocupados INTEGER NOT NULL DEFAULT 0,
-    hrs_ocupadas INTEGER NOT NULL DEFAULT 0,
-    calif_pond_us DECIMAL(2, 1) NOT NULL DEFAULT 0.0,
-    cant_ventas INTEGER NOT NULL DEFAULT 0,
-    huella_co2 DECIMAL(10, 2) NOT NULL DEFAULT 0.0,
-    FOREIGN KEY (cod_us) REFERENCES USUARIO(cod_us)
-);
-
---Revisado
-CREATE TABLE DISPONIBILIDAD(
-    cod_disp INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-
-    hora_ini VARCHAR(10) NOT NULL,
-    hora_fin VARCHAR(10) NOT NULL,
-    fecha_dia DATE NOT NULL
-);
-
---Revisado
-CREATE TABLE PUBLICACION(
-    cod_pub INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    cod_us INTEGER,
-    fecha_ini_pub DATE NOT NULL,
-    fecha_fin_pub DATE NOT NULL,
-    foto_pub BYTEA,
-    calif_pond_pub DECIMAL(3,2) NOT NULL DEFAULT 0.0,
-    impacto_amb_pub DECIMAL(10,2) NOT NULL DEFAULT 0.0,
-    FOREIGN KEY (cod_us) REFERENCES USUARIO(cod_us)
-);
-
---Revisado
-CREATE TABLE CALIFICACIONES_PUBLICACION(
-    cod_pub INTEGER,
-    cod_us INTEGER,
-    calif_pub DECIMAL(3,2) NOT NULL DEFAULT 0.0,
-    PRIMARY KEY(cod_pub,cod_us),
-    FOREIGN KEY (cod_pub) REFERENCES PUBLICACION(cod_pub),
-    FOREIGN KEY (cod_us) REFERENCES USUARIO(cod_us)
-);
-
---Revisado
-CREATE TABLE CALIFICACION(
-    cod_calif INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    calificacion_us DECIMAL(2,1) NOT NULL DEFAULT 0.0,
-    cod_us_calificador INTEGER,
-    cod_us_calificado INTEGER,
-    FOREIGN KEY (cod_us_calificador) REFERENCES USUARIO(cod_us),
-    FOREIGN KEY (cod_us_calificado) REFERENCES USUARIO(cod_us)
-);
-
---Revisado
-CREATE TABLE USUARIO_LOGRO(
-    cod_us INTEGER,
-    cod_logro INTEGER,
-    progreso DECIMAL(5,2) NOT NULL DEFAULT 0.0,
-    estado_logro VARCHAR(20) NOT NULL,
-    fecha_obtencion_logro TIMESTAMP,
-    CONSTRAINT CK_estado_logro CHECK (estado_logro IN ('Completado','En progreso')),--MODIFICACION
-    PRIMARY KEY(cod_us, cod_logro),
-    FOREIGN KEY (cod_us) REFERENCES USUARIO(cod_us),
-    FOREIGN KEY (cod_logro) REFERENCES LOGRO(cod_logro)
-);
-
---Revisado
-CREATE TABLE PUBLICACION_PRODUCTO(
-    cod_pub INTEGER,
-    cod_prod INTEGER,
-    cant_prod INTEGER NOT NULL DEFAULT 0,
-    unidad_medida VARCHAR(20),
-    PRIMARY KEY(cod_pub, cod_prod),
-    FOREIGN KEY (cod_pub) REFERENCES PUBLICACION (cod_pub),
-    FOREIGN KEY (cod_prod) REFERENCES PRODUCTO (cod_prod)
-);
-
---Revisado
-CREATE TABLE PUBLICACION_SERVICIO(
-    cod_pub INTEGER,
-    cod_serv INTEGER,
-    hrs_ini_dia_serv TIME NOT NULL,
-    hrs_fin_dia_serv TIME NOT NULL,
-    PRIMARY KEY (cod_pub, cod_serv),
-    FOREIGN KEY (cod_pub) REFERENCES PUBLICACION(cod_pub),
-    FOREIGN KEY (cod_serv) REFERENCES SERVICIO(cod_serv)
-);
-
---Revisado
-CREATE TABLE TRANSACCION(
-    cod_trans INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    cod_us_origen INTEGER,
-    cod_us_destino INTEGER,
-    cod_pub INTEGER,
-    cod_evento INTEGER,
-    cod_potenciador INTEGER,
-    desc_trans VARCHAR(200) NOT NULL,
-    fecha_trans TIMESTAMP NOT NULL,
-    moneda VARCHAR(10) NOT NULL,
-    monto_regalo DECIMAL(12,2) NULL, --MODIFICACION
-    estado_trans VARCHAR(20) NOT NULL,
-    CONSTRAINT CK_estado_trans CHECK (estado_trans IN ('satisfactorio','no satisfactorio')),
-    FOREIGN KEY (cod_us_origen) REFERENCES USUARIO(cod_us),
-    FOREIGN KEY (cod_us_destino) REFERENCES USUARIO(cod_us),
-    FOREIGN KEY (cod_pub) REFERENCES PUBLICACION(cod_pub),
-    FOREIGN KEY (cod_evento) REFERENCES EVENTO(cod_evento),
-    FOREIGN KEY (cod_potenciador) REFERENCES POTENCIADOR(cod_potenciador)
-);
-
---Revisado
-=======
 --Revisado y Movido
->>>>>>> 4aa1cf57878306fdb7e138e9eafcbbec1304716f
 CREATE TABLE POTENCIADOR(
     cod_potenciador INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-
     nombre_potenciador VARCHAR(100) UNIQUE NOT NULL,
     precio_potenciador DECIMAL(12,2) NOT NULL DEFAULT 0.0,
     descripcion_potenciador VARCHAR(200) NOT NULL,
@@ -711,12 +483,7 @@ CREATE TABLE INTERCAMBIO(
         ON DELETE SET NULL
 );
 
-<<<<<<< HEAD
-
---Revisado
-=======
 --Revisado y Movido
->>>>>>> 4aa1cf57878306fdb7e138e9eafcbbec1304716f
 CREATE TABLE INTERCAMBIO_PRODUCTO(
     cod_inter INTEGER,
     cod_prod INTEGER,
@@ -849,14 +616,4 @@ CREATE TABLE EQUIVALENCIA_CO2(
 
 COMMENT ON TABLE EQUIVALENCIA_CO2 IS 'Tabla de equivalencias para cálculo de huella de carbono';
 
-<<<<<<< HEAD
---MODIFICACION, QUITE LAS DOS COLUMNAS AÑADIDAS POR ALTER A BILLETERA
---ALTER TABLE BILLETERA ADD COLUMN cod_us INTEGER;
---ALTER TABLE BILLETERA ADD FOREIGN KEY (cod_us) REFERENCES USUARIO(cod_us);
-
---MODIFICACION, QUITE LAS DOS COLUMNAS AÑADIDAS POR ALTER A UBICACION
---ALTER TABLE UBICACION ADD COLUMN cod_us INTEGER;
---ALTER TABLE UBICACION ADD FOREIGN KEY (cod_us) REFERENCES USUARIO(cod_us);
-=======
 --ESTE MENSAJE ESTA DEDICADO AL BOCHITO, PORQUE ME DIJERON QUE SE PUEDE DIVIDIR EN DOS PARA ESTUDIAR TSO Y HACER TBD. GRACIAS BOCHITO.
->>>>>>> 4aa1cf57878306fdb7e138e9eafcbbec1304716f

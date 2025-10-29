@@ -24,7 +24,7 @@ model categoria {
   descr_cat String @db.VarChar(100)
   imagen_repr Bytes @db.ByteA
   tipo_cat Category
-  subcategorias subcategoria[]
+  subcategorias subcategoria_producto[]
 }
 
 enum Category {
@@ -32,7 +32,7 @@ enum Category {
   Servicio
 }
 
-model subcategoria {
+model subcategoria_producto {
   cod_subcat_prod Int @id @default(autoincrement())
   cod_cat Int
   categoria categoria @relation(fields: [cod_cat], references: [cod_cat], onDelete: Cascade)

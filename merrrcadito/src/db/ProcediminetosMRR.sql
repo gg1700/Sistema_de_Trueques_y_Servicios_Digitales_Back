@@ -203,16 +203,16 @@ CREATE OR REPLACE PROCEDURE sp_registrarSubcategoriaProducto(
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO SUBCATEGORIA_PRODUCTO (
+    INSERT INTO subcategoria_producto (
         cod_cat,
         nom_subcat_prod,
         descr_subcat_prod,
         imagen_representativa
     ) VALUES (
-        p_cod_cat,
-        p_nom_subcat_prod,
-        p_descr_subcat_prod,
-        p_imagen_representativa
+        _p_cod_cat,
+        _p_nom_subcat_prod,
+        _p_descr_subcat_prod,
+        _p_imagen_representativa
     );
 END;
 $$;

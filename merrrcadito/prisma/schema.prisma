@@ -17,3 +17,16 @@ model Promocion {
   banner_prom Bytes?
   descuento_prom Decimal @default(0.0) @db.Decimal(5, 2)
 }
+
+model categoria {
+  cod_cat Int @id @default(autoincrement())
+  nom_cat String @unique @db.VarChar(100)
+  descr_cat String @db.VarChar(100)
+  imagen_repr Bytes @db.ByteA
+  tipo_cat Category
+}
+
+enum Category {
+  Producto
+  Servicio
+}

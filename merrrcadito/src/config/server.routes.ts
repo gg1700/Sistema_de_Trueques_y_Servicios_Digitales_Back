@@ -8,7 +8,7 @@ router.use('/api/promociones', PromocionesRoutes);
 router.use((req, res) => {
     console.log('Not found:', req.method, req.originalUrl);
     res.status(400).send({
-        message: 'Routa no encontrada.',
+        message: 'Route not found.',
     });
 });
 

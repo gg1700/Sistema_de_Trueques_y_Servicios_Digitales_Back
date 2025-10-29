@@ -1060,7 +1060,7 @@ CREATE OR REPLACE FUNCTION sp_reporte_impacto_ambiental(
         p.fecha_ini_pub AS fecha_publicacion
     FROM PUBLICACION p
     JOIN PUBLICACION_PRODUCTO pp ON p.cod_pub = pp.cod_pub
-    JOIN PRODUCTO pr ON pp.cod_prod = pr.cod_prod
+    JOIN PRODUCTO pr_p_cod_org INT, ON pp.cod_prod = pr.cod_prod
     WHERE p.cod_us = _p_cod_us
     
     UNION ALL

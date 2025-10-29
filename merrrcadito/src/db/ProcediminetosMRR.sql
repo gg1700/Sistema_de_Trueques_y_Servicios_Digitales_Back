@@ -232,7 +232,7 @@ RETURNS TABLE(
     cod_cat INT
 ) LANGUAGE sql AS $$
     SELECT sub.cod_subcat_prod, sub.nom_subcat_prod, sub.cod_cat
-    FROM SUBCATEGORIA_PRODUCTO sub
+    FROM subcategoria_producto sub
     ORDER BY sub.cod_cat
 $$;
 

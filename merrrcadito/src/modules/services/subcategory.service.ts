@@ -22,3 +22,14 @@ export async function registerSubcategory(
         throw error;
     }
 }
+
+export async function getSubcategory(){
+  try {
+    await prisma.$queryRaw`
+      CALL sp_getSubcategorias()
+    `;
+    return { success: true , message: "Lista de subcategorias"}
+  } catch (error){
+    throw error;
+  }
+}

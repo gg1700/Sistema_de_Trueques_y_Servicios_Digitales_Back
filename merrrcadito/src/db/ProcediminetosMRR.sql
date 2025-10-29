@@ -102,16 +102,16 @@ CREATE OR REPLACE PROCEDURE sp_registrarCategoria(
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO CATEGORIA (
+    INSERT INTO categoria (
         nom_cat,
         descr_cat,
         imagen_repr,
         tipo_cat
     ) VALUES (
-        p_nom_cat,
-        p_descr_cat,
-        p_imagen_repr,
-        p_tipo_cat
+        _p_nom_cat,
+        _p_descr_cat,
+        _p_imagen_repr,
+        _p_tipo_cat::"Category"
     );
 END;
 $$;

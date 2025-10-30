@@ -878,14 +878,14 @@ DECLARE
     _nuevo_id INTEGER;
     _material_exists BOOLEAN;
 BEGIN
-    SELECT EXISTS(SELECT 1 FROM MATERIAL WHERE cod_mat = _p_cod_mat) 
+    SELECT EXISTS(SELECT 1 FROM material WHERE cod_mat = _p_cod_mat) 
     INTO _material_exists;
     
     IF NOT _material_exists THEN
         RAISE EXCEPTION 'El material con ID % no existe', _p_cod_mat;
     END IF;
     
-    INSERT INTO EQUIVALENCIA_CO2 (
+    INSERT INTO equivalencia_co2 (
         cod_mat, unidad_origen, unidad_destino, factor_conversion, 
         descripcion, fuente_datos, fecha_actualizacion
     ) VALUES (

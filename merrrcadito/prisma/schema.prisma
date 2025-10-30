@@ -8,22 +8,22 @@ datasource db {
 }
 
 model Promocion {
-  cod_prom Int @id @default(autoincrement())
-  titulo_prom String @unique @db.VarChar(100)
+  cod_prom       Int      @id @default(autoincrement())
+  titulo_prom    String   @unique @db.VarChar(100)
   fecha_ini_prom DateTime @db.Timestamp(6)
-  duracion_prom Int
+  duracion_prom  Int
   fecha_fin_prom DateTime @db.Timestamp(6)
-  descr_prom String @db.VarChar(300)
-  banner_prom Bytes?
-  descuento_prom Decimal @default(0.0) @db.Decimal(5, 2)
+  descr_prom     String   @db.VarChar(300)
+  banner_prom    Bytes?
+  descuento_prom Decimal  @default(0.0) @db.Decimal(5, 2)
 }
 
 model categoria {
-  cod_cat Int @id @default(autoincrement())
-  nom_cat String @unique @db.VarChar(100)
-  descr_cat String @db.VarChar(100)
-  imagen_repr Bytes @db.ByteA
-  tipo_cat Category
+  cod_cat       Int                     @id @default(autoincrement())
+  nom_cat       String                  @unique @db.VarChar(100)
+  descr_cat     String                  @db.VarChar(100)
+  imagen_repr   Bytes                   @db.ByteA
+  tipo_cat      Category
   subcategorias subcategoria_producto[]
 }
 
@@ -33,33 +33,33 @@ enum Category {
 }
 
 model subcategoria_producto {
-  cod_subcat_prod Int @id @default(autoincrement())
-  cod_cat Int
-  categoria categoria @relation(fields: [cod_cat], references: [cod_cat], onDelete: Cascade)
-  nom_subcat_prod String @unique @db.VarChar(100)
-  descr_subcat_prod String @db.VarChar(200)
-  imagen_representativa Bytes @db.ByteA
+  cod_subcat_prod       Int       @id @default(autoincrement())
+  cod_cat               Int
+  categoria             categoria @relation(fields: [cod_cat], references: [cod_cat], onDelete: Cascade)
+  nom_subcat_prod       String    @unique @db.VarChar(100)
+  descr_subcat_prod     String    @db.VarChar(200)
+  imagen_representativa Bytes     @db.ByteA
 }
 
 model material {
-  cod_mat               Int       @id @default(autoincrement())
-  nom_mat               String    @unique @db.VarChar(100)
-  descr_mat             String?   @db.VarChar(200)
-  factor_co2            Decimal   @db.Decimal(10, 4)
-  unidad_medida_co2     String    @default("kg") @db.VarChar(20)
-  equivalencias_co2     equivalencia_co2[]
+  cod_mat           Int                @id @default(autoincrement())
+  nom_mat           String             @unique @db.VarChar(100)
+  descr_mat         String?            @db.VarChar(200)
+  factor_co2        Decimal            @db.Decimal(10, 4)
+  unidad_medida_co2 String             @default("kg") @db.VarChar(20)
+  equivalencias_co2 equivalencia_co2[]
 }
 
 model equivalencia_co2 {
-  cod_equiv             Int       @id @default(autoincrement())
-  cod_mat               Int
-  material              material  @relation(fields: [cod_mat], references: [cod_mat], onDelete: Cascade, onUpdate: Cascade)
-  unidad_origen         String    @db.VarChar(20)
-  unidad_destino        String    @default("kg_co2") @db.VarChar(20)
-  factor_conversion     Decimal   @db.Decimal(12, 6)
-  descripcion_equiv     String?   @db.VarChar(200)
-  fecha_actualizacion   DateTime  @default(now()) @db.Timestamp()
-  fuente_datos          String?   @db.VarChar(200)
-  
+  cod_equiv           Int      @id @default(autoincrement())
+  cod_mat             Int
+  material            material @relation(fields: [cod_mat], references: [cod_mat], onDelete: Cascade, onUpdate: Cascade)
+  unidad_origen       String   @db.VarChar(20)
+  unidad_destino      String   @default("kg_co2") @db.VarChar(20)
+  factor_conversion   Decimal  @db.Decimal(12, 6)
+  descripcion_equiv   String?  @db.VarChar(200)
+  fecha_actualizacion DateTime @default(now()) @db.Timestamp()
+  fuente_datos        String?  @db.VarChar(200)
+
   @@unique([cod_mat, unidad_origen, unidad_destino], name: "UK_equiv_material_unidades")
 }

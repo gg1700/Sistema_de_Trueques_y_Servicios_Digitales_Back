@@ -26,7 +26,7 @@ export async function registerSubcategory(req: Request, res: Response){
 
 export async function getSubcategory(req: Request, res: Response){
   try{
-    const result =await SubcategoryService.getSubcategory;
+    const result =await SubcategoryService.getSubcategory();
     return res.status(200).json({ 
       result: true,
       data: result 

@@ -24,7 +24,8 @@ CREATE OR REPLACE FUNCTION sp_registrarUsuario(
     _p_correo_us VARCHAR(100),
     _p_telefono_us VARCHAR(20),
     _p_foto_us BYTEA
-) RETURNS void LANGUAGE sql AS $$
+) RETURNS void LANGUAGE plpgsql AS $$ 
+BEGIN
     INSERT INTO USUARIO (
         cod_rol, ci, nom_us, handle_name, ap_pat_us, ap_mat_us, contra_us,
         fecha_nacimiento, sexo, estado_us, correo_us, telefono_us, foto_us
@@ -33,6 +34,7 @@ CREATE OR REPLACE FUNCTION sp_registrarUsuario(
         _p_cod_rol, _p_ci, _p_nom_us, _p_handle_name, _p_ap_pat_us, _p_ap_mat_us, _p_contra_us,
         _p_fecha_nacimiento, _p_sexo, _p_estado_us, _p_correo_us, _p_telefono_us, _p_foto_us
     );
+END;
 $$;
 
 -- =========================================
@@ -46,13 +48,20 @@ $$;
 CREATE OR REPLACE FUNCTION sp_verificarUsuarioLogin(
     _p_handle_name VARCHAR(100),
     _p_contra_us   VARCHAR(100)
-) RETURNS boolean LANGUAGE sql AS $$
+) RETURNS boolean LANGUAGE plpgsql AS $$
+
+  DECLARE usuario_existente boolean;
+
+BEGIN
     SELECT EXISTS(
         SELECT 1
         FROM USUARIO
         WHERE handle_name = _p_handle_name
           AND contra_us   = _p_contra_us
-    );
+    )INTO usuario_existente;
+
+    RETURN usuario_existente;
+END;
 $$;
 
 -- =========================================
@@ -72,7 +81,8 @@ CREATE OR REPLACE FUNCTION sp_actualizarUsuario(
    _p_correo_us VARCHAR(100) DEFAULT NULL,
    _p_telefono_us VARCHAR(20) DEFAULT NULL,
    _p_foto_us BYTEA
-) RETURNS void LANGUAGE sql AS $$
+) RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
    UPDATE USUARIO
       SET nom_us     = COALESCE(_p_nom_us, nom_us),
           correo_us  = COALESCE(_p_correo_us, correo_us),
@@ -82,6 +92,7 @@ CREATE OR REPLACE FUNCTION sp_actualizarUsuario(
           ap_mat_name= COALESCE(_p_ap_mat_us,ap_mat_us),
           foto_us= COALESCE(_p_foto_us, foto_us)
     WHERE cod_us = _p_cod_us;
+END;
 $$;
 
 -- =========================================
@@ -126,10 +137,13 @@ $$;
 CREATE OR REPLACE FUNCTION sp_verCategoria(_p_cod_cat INT)
 RETURNS TABLE(
     cod_cat INT, nom_cat VARCHAR, descr_cat VARCHAR, imagen_repr BYTEA, tipo_cat VARCHAR
-) LANGUAGE sql AS $$
+) LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN QUERY
     SELECT c.cod_cat, c.nom_cat, c.descr_cat, c.imagen_repr, c.tipo_cat
     FROM CATEGORIA c
     WHERE c.cod_cat = _p_cod_cat
+END;
 $$;
 
 -- =========================================
@@ -141,11 +155,15 @@ $$;
 -- Filtra los registros de la tabla CATEGORIA comparando el campo tipo_cat (en minúsculas) con el valor 'producto'.
 -- Devuelve únicamente el código y el nombre de cada categoría, ordenados por su código.
 CREATE OR REPLACE FUNCTION sp_getCategoriasProducto()
-RETURNS TABLE(cod_cat INT, nom_cat VARCHAR) LANGUAGE sql AS $$
+RETURNS TABLE(cod_cat INT, nom_cat VARCHAR) 
+LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN QUERY
     SELECT c.cod_cat, c.nom_cat
     FROM CATEGORIA c
     WHERE LOWER(c.tipo_cat) = 'producto'
-    ORDER BY c.cod_cat
+    ORDER BY c.cod_cat;
+END;
 $$;
 
 -- =========================================
@@ -157,11 +175,14 @@ $$;
 -- Filtra los registros de la tabla CATEGORIA comparando el campo tipo_cat (en minúsculas) con el valor 'servicio'.
 -- Devuelve únicamente el código y el nombre de cada categoría, ordenados por su código.
 CREATE OR REPLACE FUNCTION sp_getCategoriasServicio()
-RETURNS TABLE(cod_cat INT, nom_cat VARCHAR) LANGUAGE sql AS $$
+RETURNS TABLE(cod_cat INT, nom_cat VARCHAR) LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN QUERY
     SELECT c.cod_cat, c.nom_cat
     FROM CATEGORIA c
     WHERE LOWER(c.tipo_cat) = 'servicio'
-    ORDER BY c.cod_cat
+    ORDER BY c.cod_cat;
+END;
 $$;
 
 -- =========================================
@@ -178,13 +199,15 @@ CREATE OR REPLACE FUNCTION sp_actualizarcategoria(
     _p_descr_cat VARCHAR(200) DEFAULT NULL,
     _p_imagen_repr BYTEA DEFAULT NULL,
     _p_tipo_cat VARCHAR(20) DEFAULT NULL
-) RETURNS void LANGUAGE sql AS $$
+) RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
     UPDATE CATEGORIA
        SET nom_cat     = COALESCE(_p_nom_cat, nom_cat),
            descr_cat   = COALESCE(_p_descr_cat, descr_cat),
            imagen_repr = COALESCE(_p_imagen_repr, imagen_repr),
            tipo_cat    = COALESCE(_p_tipo_cat, tipo_cat)
      WHERE cod_cat = _p_cod_cat;
+END;
 $$;
 
 -- =========================================
@@ -230,10 +253,13 @@ RETURNS TABLE(
     cod_subcat_prod INT,
     nom_subcat_prod VARCHAR,
     cod_cat INT
-) LANGUAGE sql AS $$
+) LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN QUERY
     SELECT sub.cod_subcat_prod, sub.nom_subcat_prod, sub.cod_cat
     FROM subcategoria_producto sub
-    ORDER BY sub.cod_cat
+    ORDER BY sub.cod_cat;
+END;
 $$;
 
 -- =========================================
@@ -251,12 +277,15 @@ RETURNS TABLE(
     nom_cat VARCHAR,
     descr_subcat_prod VARCHAR,
     imagen_representativa BYTEA
-) LANGUAGE sql AS $$
+) LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN QUERY
     SELECT sub.cod_subcat_prod, sub.nom_subcat_prod, c.nom_cat,
            sub.descr_subcat_prod, sub.imagen_representativa
     FROM SUBCATEGORIA_PRODUCTO sub
     JOIN CATEGORIA c ON c.cod_cat = sub.cod_cat
-    WHERE sub.cod_subcat_prod = _p_cod_subcat_prod
+    WHERE sub.cod_subcat_prod = _p_cod_subcat_prod;
+END;
 $$;
 
 -- =========================================
@@ -273,13 +302,15 @@ CREATE OR REPLACE FUNCTION sp_actualizarsubcategoria(
     _p_nom_subcat_prod VARCHAR(100) DEFAULT NULL,
     _p_imagen_representativa BYTEA DEFAULT NULL,
     _p_descr_subcat_prod VARCHAR(200) DEFAULT NULL
-) RETURNS void LANGUAGE sql AS $$
+) RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
     UPDATE SUBCATEGORIA_PRODUCTO
        SET cod_cat               = COALESCE(_p_cod_cat, cod_cat),
            nom_subcat_prod       = COALESCE(_p_nom_subcat_prod, nom_subcat_prod),
            imagen_representativa = COALESCE(_p_imagen_representativa, imagen_representativa),
            descr_subcat_prod     = COALESCE(_p_descr_subcat_prod, descr_subcat_prod)
      WHERE cod_subcat_prod = _p_cod_subcat_prod;
+END;
 $$;
 
 -- =========================================
@@ -295,10 +326,13 @@ RETURNS TABLE(
     cod_subcat_prod INT,
     nom_subcat_prod VARCHAR,
     imagen_representativa BYTEA
-) LANGUAGE sql AS $$
+) LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN QUERY
     SELECT cod_subcat_prod, nom_subcat_prod, imagen_representativa
     FROM SUBCATEGORIA_PRODUCTO
     WHERE cod_cat = _p_cod_cat
+END;
 $$;
 
 -- =========================================
@@ -318,47 +352,43 @@ CREATE OR REPLACE FUNCTION sp_registrarPublicacionProducto(
   _p_nom_prod VARCHAR(100),
   _p_estado_prod VARCHAR(20),
   _p_precio_prod DECIMAL(10,2),
-  _p_id_mat INTEGER,
+  _p_cod_mat INTEGER,
   _p_peso_prod DECIMAL(10,2),
   _p_marca_prod VARCHAR(50),
   _p_desc_prod VARCHAR(200),
   _p_cant_prod INTEGER,
   _p_unidad_medida VARCHAR(20)
 )
-RETURNS VOID AS $$
+RETURNS VOID LANGUAGE plpgsql AS $$
 DECLARE
-  pp_id_prod INTEGER;
+  pp_cod_prod INTEGER;
   pp_cod_pub INTEGER;
-  p_fecha_ini_pub DATE := CURRENT_DATE;
-  p_fecha_fin_pub DATE := CURRENT_DATE + INTERVAL '1 month';
+  _p_fecha_ini_pub DATE := CURRENT_DATE;
+  _p_fecha_fin_pub DATE := CURRENT_DATE + INTERVAL '1 month';
 BEGIN
-  
-  BEGIN
-   
     INSERT INTO PRODUCTO(
       cod_subcat_prod, nom_prod, estado_prod, precio_prod, 
       peso_prod, marca_prod, desc_prod
     ) VALUES(
-      p_cod_subcat_prod, p_nom_prod, p_estado_prod, p_precio_prod,
-      p_peso_prod, p_marca_prod, p_desc_prod
-    ) RETURNING id_prod INTO pp_cod_prod;
+      _p_cod_subcat_prod, _p_nom_prod, _p_estado_prod, _p_precio_prod,
+      _p_peso_prod, _p_marca_prod, _p_desc_prod
+    ) RETURNING cod_prod INTO pp_cod_prod;
 
     INSERT INTO MATERIAL_PRODUCTO(cod_mat, cod_prod)
-    VALUES(p_cod_mat, pp_cod_prod);
+    VALUES(_p_cod_mat, pp_cod_prod);
 
     INSERT INTO PUBLICACION(
       cod_us, fecha_ini_pub, fecha_fin_pub, foto_pub
     ) VALUES(
-      p_cod_us, p_fecha_ini_pub, p_fecha_fin_pub, p_foto_pub
+      _p_cod_us, _p_fecha_ini_pub, _p_fecha_fin_pub, _p_foto_pub
     ) RETURNING cod_pub INTO pp_cod_pub;
     INSERT INTO PUBLICACION_PRODUCTO(
       cod_pub, cod_prod, cant_prod, unidad_medida
     ) VALUES(
-      pp_cod_pub, pp_cod_prod, p_cant_prod, p_unidad_medida
+      pp_cod_pub, pp_cod_prod, _p_cant_prod, _p_unidad_medida
     );
-    COMMIT;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- =========================================
 -- 15) REGISTRAR PUBLICACIÓN DE SERVICIO
@@ -384,32 +414,29 @@ AS $$
 DECLARE
     pp_cod_serv INTEGER;
     pp_cod_pub INTEGER;
-    p_duracion_serv INTEGER := EXTRACT(EPOCH FROM (p_hrs_fin_dia_serv - p_hrs_ini_dia_serv)) / 60;
-    p_fecha_ini_pub DATE := CURRENT_DATE;
-    p_fecha_fin_pub DATE := CURRENT_DATE + INTERVAL '1 month';
+    _p_duracion_serv INTEGER := EXTRACT(EPOCH FROM (p_hrs_fin_dia_serv - p_hrs_ini_dia_serv)) / 60;
+    _p_fecha_ini_pub DATE := CURRENT_DATE;
+    _p_fecha_fin_pub DATE := CURRENT_DATE + INTERVAL '1 month';
 BEGIN
-    BEGIN
-        INSERT INTO SERVICIO (
+    INSERT INTO SERVICIO (
             nom_serv, desc_serv, precio_serv, cod_cat, duracion_serv
-        ) VALUES (
-            _p_nom_serv, _p_desc_serv, _p_precio_serv, _p_cod_cat, p_duracion_serv
-        )
-        RETURNING cod_serv INTO pp_cod_serv;
+    ) VALUES (
+            _p_nom_serv, _p_desc_serv, _p_precio_serv, _p_cod_cat, _p_duracion_serv
+    )
+    RETURNING cod_serv INTO pp_cod_serv;
 
-        INSERT INTO PUBLICACION (
+    INSERT INTO PUBLICACION (
             cod_us, foto_pub, fecha_ini_pub, fecha_fin_pub
-        ) VALUES (
-            _p_cod_us, :p_foto_pub, _p_fecha_ini_pub, _p_fecha_fin_pub
-        )
-        RETURNING cod_pub INTO pp_cod_pub;
+    ) VALUES (
+            _p_cod_us, _p_foto_pub, _p_fecha_ini_pub, _p_fecha_fin_pub
+    )
+    RETURNING cod_pub INTO pp_cod_pub;
 
-        INSERT INTO PUBLICACION_SERVICIO (
+    INSERT INTO PUBLICACION_SERVICIO (
             cod_serv, cod_pub, hrs_ini_dia_serv, hrs_fin_dia_serv
-        ) VALUES (
-            pp_cod_serv, pp_cod_pub, p_hrs_ini_dia_serv, p_hrs_fin_dia_serv
-        );
-
-        COMMIT;
+     ) VALUES (
+            pp_cod_serv, pp_cod_pub, _p_hrs_ini_dia_serv, _p_hrs_fin_dia_serv
+    );
 END;
 $$;
 
@@ -459,7 +486,7 @@ BEGIN
     RETURNING cod_prom INTO cod_prom_nuevo;
 
     INSERT INTO PROMOCION_PRODUCTO (cod_subcat_prod, cod_prom)
-    VALUES (_p_cod_subcat_prod, cod_prom_nuevo)
+    VALUES (_p_cod_subcat_prod, cod_prom_nuevo);
 END;
 $$;
 
@@ -509,7 +536,6 @@ BEGIN
 
     INSERT INTO PROMOCION_CATEGORIA (cod_cat, cod_prom)
     VALUES (p_cod_cat, cod_prom_nuevo);
-
 END;
 $$;
 
@@ -534,7 +560,9 @@ RETURNS TABLE(
     id_asociado INT,
     nombre_asociado VARCHAR,
     tipo_asociado VARCHAR
-) LANGUAGE sql AS $$
+) LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN QUERY
     SELECT
         p.cod_prom, p.titulo_prom, p.fecha_ini_prom, p.duracion_prom, p.fecha_fin_prom,
         p.descr_prom, p.banner_prom, p.descuento_prom,
@@ -551,7 +579,8 @@ RETURNS TABLE(
         ps.cod_serv, s.nom_serv 
     FROM PROMOCION p
     JOIN PROMOCION_SERVICIO ps ON p.cod_prom = ps.cod_prom
-    JOIN SERVICIO s ON ps.cod_serv = s.cod_serv
+    JOIN SERVICIO s ON ps.cod_serv = s.cod_serv;
+END;
 $$;
 
 -- =========================================
@@ -569,7 +598,8 @@ CREATE OR REPLACE FUNCTION sp_registrarEvento(
     _p_fecha_inicio_evento DATE,
     _p_fecha_finalizacion_evento DATE,
     _p_tipo_evento VARCHAR(20)
-) RETURNS void LANGUAGE sql AS $$
+) RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
     INSERT INTO EVENTO(
         cod_org, titulo_evento, descripcion_evento, fecha_registro_evento,
         fecha_inicio_evento, fecha_finalizacion_evento, duracion_evento, tipo_evento
@@ -580,6 +610,7 @@ CREATE OR REPLACE FUNCTION sp_registrarEvento(
         CAST(DATE_PART('day', _p_fecha_finalizacion_evento::timestamp - _p_fecha_inicio_evento::timestamp) AS INTEGER),
         _p_tipo_evento
     );
+END;
 $$;
 
 -- =========================================
@@ -589,20 +620,14 @@ $$;
 -- Descripción:
 -- Esta función registra la participación de un usuario en un evento determinado.
 -- Inserta un nuevo registro en la tabla USUARIO_EVENTO, asociando el código del evento con el código del usuario.
-
--- Parámetros:
--- _p_cod_us       → Código del usuario que participa
--- _p_cod_evento   → Código del evento al que se inscribe
-
--- Retorno:
--- VOID → No retorna ningún valor
-
 CREATE OR REPLACE FUNCTION sp_participarEvento(
     _p_cod_us INT,
     _p_cod_evento INT
-) RETURNS void LANGUAGE sql AS $$
+) RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
     INSERT INTO USUARIO_EVENTO(cod_evento, cod_us)
     VALUES(_p_cod_evento, _p_cod_us);
+END;
 $$;
 
 
@@ -616,11 +641,14 @@ $$;
 -- Devuelve el conjunto completo de columnas definidas en la tabla TRANSACCION.
 CREATE OR REPLACE FUNCTION sp_historiaTransaccionesUsuario(
     _p_cod_us INT
-) RETURNS SETOF TRANSACCION LANGUAGE sql AS $$
+) RETURNS SETOF TRANSACCION LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN QUERY
     SELECT *
     FROM TRANSACCION
     WHERE cod_us_destino = _p_cod_us
-       OR cod_us_origen  = _p_cod_us
+       OR cod_us_origen  = _p_cod_us;
+END;
 $$;
 
 -- =========================================
@@ -632,7 +660,7 @@ $$;
 -- Filtra los registros de la tabla EVENTO cuyo estado sea 'vigente'.
 -- Devuelve el conjunto completo de columnas definidas en la tabla EVENTO.
 CREATE OR REPLACE FUNCTION sp_getEventosActivos()
-RETURNS SETOF EVENTO LANGUAGE sql AS $$
+RETURNS SETOF EVENTO LANGUAGE plpgsql AS $$
     SELECT *
     FROM EVENTO
     WHERE estado_evento = 'vigente'
@@ -710,7 +738,7 @@ $$;
 -- Incluye publicaciones de productos y servicios, combinando los datos mediante LEFT JOIN.
 -- Devuelve información general de la publicación junto con los detalles del producto o servicio asociado.
 CREATE OR REPLACE FUNCTION sp_getPublicacionesUsuario(
-    _p_cod_usuario INT
+    _p_cod_us INT
 ) RETURNS TABLE(
     cod_pub INT,
     cod_us INT,
@@ -725,7 +753,9 @@ CREATE OR REPLACE FUNCTION sp_getPublicacionesUsuario(
     cod_serv INT,
     hrs_ini_dia_serv TIME,
     hrs_fin_dia_serv TIME
-) LANGUAGE sql AS $$
+) LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN QUERY
     SELECT
         p.cod_pub, p.cod_us, p.fecha_ini_pub, p.fecha_fin_pub, p.foto_pub,
         p.calif_pond_pub, p.impacto_amb_pub,
@@ -734,8 +764,9 @@ CREATE OR REPLACE FUNCTION sp_getPublicacionesUsuario(
     FROM PUBLICACION p
     LEFT JOIN PUBLICACION_PRODUCTO pp ON p.cod_pub = pp.cod_pub
     LEFT JOIN PUBLICACION_SERVICIO ps ON p.cod_pub = ps.cod_pub
-    WHERE p.cod_us = _p_cod_usuario
-    ORDER BY p.fecha_ini_pub DESC
+    WHERE p.cod_us = _p_cod_us
+    ORDER BY p.fecha_ini_pub DESC;
+END:
 $$;
 
 -- =========================================
@@ -761,7 +792,9 @@ RETURNS TABLE(
     foto_us BYTEA,
     hrs_ini_dia_serv TIME,
     hrs_fin_dia_serv TIME
-) LANGUAGE sql AS $$
+) LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN QUERY
     SELECT
         p.cod_pub, p.foto_pub, p.calif_pond_pub, p.impacto_amb_pub,
         s.cod_serv, s.nom_serv, s.desc_serv, s.precio_serv, s.duracion_serv,
@@ -772,7 +805,8 @@ RETURNS TABLE(
     JOIN CATEGORIA c ON s.cod_cat = c.cod_cat
     JOIN USUARIO u ON p.cod_us = u.cod_us
     WHERE c.cod_cat = _p_cod_cat
-      AND LOWER(c.tipo_cat) = 'servicio'
+      AND LOWER(c.tipo_cat) = 'servicio';
+END;
 $$;
 
 -- =========================================
@@ -797,7 +831,9 @@ RETURNS TABLE(
     unidad_medida VARCHAR,
     handle_name VARCHAR,
     foto_us BYTEA
-) LANGUAGE sql AS $$
+) LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN QUERY
     SELECT
         p.cod_pub, p.foto_pub, p.calif_pond_pub, p.impacto_amb_pub,
         pr.cod_prod, pr.nom_prod, pr.desc_prod, pr.precio_prod,
@@ -808,7 +844,8 @@ RETURNS TABLE(
     JOIN PUBLICACION_PRODUCTO ppr ON ppr.cod_pub = p.cod_pub
     JOIN PRODUCTO pr ON pr.cod_prod = ppr.cod_prod
     JOIN SUBCATEGORIA_PRODUCTO sub ON sub.cod_subcat_prod = pr.cod_subcat_prod
-    WHERE sub.cod_subcat_prod = _p_cod_subcat_prod
+    WHERE sub.cod_subcat_prod = _p_cod_subcat_prod;
+END;
 $$;
 
 -- =========================================
@@ -970,7 +1007,7 @@ CREATE OR REPLACE FUNCTION sp_getEquivalenciasMaterial(
     fecha_actualizacion TIMESTAMP,
     fuente_datos VARCHAR,
     nom_mat VARCHAR
-) LANGUAGE sql AS $$
+) LANGUAGE plpgsql AS $$
     SELECT 
         e.cod_equiv, e.unidad_origen, e.factor_conversion,
         e.descripcion, e.fecha_actualizacion, e.fuente_datos,
@@ -1041,7 +1078,7 @@ $$;
 -- Esta función genera un reporte consolidado del impacto ambiental de todas las publicaciones realizadas por un usuario.
 -- Incluye tanto productos como servicios, diferenciando el tipo de publicación.
 -- Devuelve el nombre del ítem, cantidad, unidad, CO₂ generado y fecha de publicación.
-CREATE OR REPLACE FUNCTION sp_reporte_impacto_ambiental(
+CREATE OR REPLACE FUNCTION sp_reporteImpactoAmbiental(
     _p_cod_us INTEGER
 ) RETURNS TABLE(
     tipo_publicacion VARCHAR,
@@ -1050,7 +1087,7 @@ CREATE OR REPLACE FUNCTION sp_reporte_impacto_ambiental(
     unidad VARCHAR,
     co2_generado DECIMAL(10,2),
     fecha_publicacion DATE
-) LANGUAGE sql AS $$
+) LANGUAGE plpgsql AS $$
     SELECT 
         'Producto' AS tipo_publicacion,
         pr.nom_prod AS nombre_item,
@@ -1140,7 +1177,7 @@ RETURNS TABLE (
     fechaObtencion_logro TIMESTAMP,
     progreso_actual INTEGER
 )
-AS $$
+LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
     SELECT 
@@ -1166,7 +1203,7 @@ BEGIN
         CASE WHEN ul.fechaObtencion_logro IS NOT NULL THEN 1 ELSE 2 END,
         ul.fechaObtencion_logro DESC;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- =========================================
 -- 36) CAMBIAR CRÉDITOS A MONEDA LOCAL
@@ -1195,7 +1232,7 @@ DECLARE
 BEGIN
     monto_bol := _p_montoCambiar * cambio;
     monto_bol := ROUND(monto_bol, 2);
-
+  RETURN QUERY
     SELECT saldo_actual - _p_montoCambiar INTO saldo_actualizado
     FROM BILLETERA 
     WHERE cod_bill = _p_cod_bill;

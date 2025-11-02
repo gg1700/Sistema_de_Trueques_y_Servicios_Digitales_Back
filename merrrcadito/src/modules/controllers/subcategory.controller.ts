@@ -26,11 +26,14 @@ export async function registerSubcategory(req: Request, res: Response){
 
 export async function getSubcategory(req: Request, res: Response){
   try{
-    const result =await SubcategoryService.getSubcategory();
-    return res.status(200).json({ 
-      result: true,
-      data: result 
-    });
+    const data = await SubcategoryService.getSubcategory();
+    if(!data){
+      return res.status(404).json({
+        success: false,
+        error: "No se encontraron subcategorias"
+      });
+    }
+    return res.status(200).json(data);
   } catch (error) {
     console.log("Error al obtener subcategorias");
     res.status(500).json({

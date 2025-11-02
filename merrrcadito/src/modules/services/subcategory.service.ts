@@ -25,8 +25,8 @@ export async function registerSubcategory(
 
 export async function getSubcategory(){
   try {
-    const subcategories=await prisma.$queryRaw`
-      CALL sp_getSubcategorias()
+    const subcategories = await prisma.$queryRaw`
+      SELECT * FROM sp_getSubcategorias()
     `;
     return subcategories;
   } catch (error){

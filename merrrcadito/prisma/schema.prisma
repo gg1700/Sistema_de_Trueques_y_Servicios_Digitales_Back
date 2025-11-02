@@ -7,7 +7,48 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Promocion {
+model origanizacion {
+  cod_org            Int      @id @default(autoincrement())
+  nom_com_org        String   @db.VarChar(100)
+  nom_leg_org        String   @unique @db.VarChar(150)
+  tipo_org           String   @db.VarChar(50)
+  rubro_org          String   @db.VarChar(100)
+  cif                String   @unique @db.VarChar(30)
+  correo_org         String   @unique @db.VarChar(100)
+  telf_org           String   @unique @db.VarChar(20)
+  dir_org            String   @db.VarChar(200)
+  fecha_registro_org DateTime @default(now()) @db.Timestamp(6)
+  sitio_web          String?  @db.VarChar(150)
+  logo_org           Bytes?   @db.ByteA
+
+  eventos evento[]
+}
+
+model advertencia {
+  cod_adv       Int              @id @default(autoincrement())
+  motivo_adv    AdvertenceReason
+  fecha_emision DateTime         @default(now()) @db.Timestamp(6)
+  estado_adv    AdvertenceState  @default(no_revisado)
+}
+
+model rol {
+  cod_rol   Int      @id @default(autoincrement())
+  nom_rol   RoleName @unique @default(usuario_comun)
+  descr_rol String   @db.VarChar(200)
+
+  usuarios usuario[]
+}
+
+model disponibilidad {
+  cod_disp  Int      @id @default(autoincrement())
+  hora_ini  String   @db.VarChar(10)
+  hora_fin  String   @db.VarChar(10)
+  fecha_dia DateTime @db.Date
+
+  usuarios usuario[]
+}
+
+model promocion {
   cod_prom       Int      @id @default(autoincrement())
   titulo_prom    String   @unique @db.VarChar(100)
   fecha_ini_prom DateTime @db.Timestamp(6)
@@ -16,20 +57,49 @@ model Promocion {
   descr_prom     String   @db.VarChar(300)
   banner_prom    Bytes?
   descuento_prom Decimal  @default(0.0) @db.Decimal(5, 2)
+
+  subcategorias promocion_producto[]
+  servicios     promocion_servicio[]
+}
+
+model recompensa {
+  cod_rec   Int     @id @default(autoincrement())
+  monto_rec Decimal @default(0.0) @db.Decimal(12, 2)
+
+  lorgos  recompensa_logro[]
+  eventos evento_recompensa[]
+}
+
+model material {
+  cod_mat           Int     @id @default(autoincrement())
+  nom_mat           String  @unique @db.VarChar(100)
+  descr_mat         String? @db.VarChar(200)
+  factor_co2        Decimal @db.Decimal(10, 4)
+  unidad_medida_co2 String  @default("kg") @db.VarChar(20)
+
+  equivalencias_co2 equivalencia_co2[]
+  productos         material_producto[]
+}
+
+model logro {
+  cod_logro     Int                @id @default(autoincrement())
+  titulo_logro  String             @unique @db.VarChar(100)
+  descr_logro   String             @db.VarChar(200)
+  icono_logro   Bytes              @db.ByteA
+  calidad_logro AchievementQuality
+
+  recompensas recompensa_logro[]
 }
 
 model categoria {
-  cod_cat       Int                     @id @default(autoincrement())
-  nom_cat       String                  @unique @db.VarChar(100)
-  descr_cat     String                  @db.VarChar(100)
-  imagen_repr   Bytes                   @db.ByteA
-  tipo_cat      Category
-  subcategorias subcategoria_producto[]
-}
+  cod_cat     Int      @id @default(autoincrement())
+  nom_cat     String   @unique @db.VarChar(100)
+  descr_cat   String   @db.VarChar(100)
+  imagen_repr Bytes    @db.ByteA
+  tipo_cat    Category
 
-enum Category {
-  Producto
-  Servicio
+  subcategorias subcategoria_producto[]
+  servicios     servicio[]
 }
 
 model subcategoria_producto {
@@ -39,15 +109,218 @@ model subcategoria_producto {
   nom_subcat_prod       String    @unique @db.VarChar(100)
   descr_subcat_prod     String    @db.VarChar(200)
   imagen_representativa Bytes     @db.ByteA
+
+  productos   producto[]
+  promociones promocion_producto[]
 }
 
-model material {
-  cod_mat           Int                @id @default(autoincrement())
-  nom_mat           String             @unique @db.VarChar(100)
-  descr_mat         String?            @db.VarChar(200)
-  factor_co2        Decimal            @db.Decimal(10, 4)
-  unidad_medida_co2 String             @default("kg") @db.VarChar(20)
-  equivalencias_co2 equivalencia_co2[]
+model servicio {
+  cod_serv      Int          @id @default(autoincrement())
+  cod_cat       Int
+  nom_serv      String       @unique @db.VarChar(100)
+  desc_serv     String?      @db.VarChar(200)
+  estado_serv   ServiceState @default(disponible)
+  precio_serv   Decimal      @default(0.0) @db.Decimal(10, 2)
+  duracion_serv Int          @default(0)
+  dif_dist_serv Decimal      @default(0.0) @db.Decimal(10, 2)
+
+  categoria categoria @relation(fields: [cod_cat], references: [cod_cat], onDelete: Cascade, onUpdate: Cascade)
+
+  promociones promocion_servicio[]
+}
+
+model producto {
+  cod_prod        Int            @id @default(autoincrement())
+  cod_subcat_prod Int
+  nom_prod        String         @db.VarChar(100)
+  peso_prod       Decimal        @default(0.0) @db.Decimal(10, 2)
+  calidad_prod    ProductQuality
+  estado_prod     ProductState   @default(disponible)
+  precio_prod     Decimal        @default(0.0) @db.Decimal(10, 2)
+  marca_prod      String?        @db.VarChar(50)
+  desc_prod       String?        @db.VarChar(200)
+
+  subcategoria subcategoria_producto @relation(fields: [cod_subcat_prod], references: [cod_subcat_prod], onDelete: Cascade, onUpdate: Cascade)
+
+  materiales material_producto[]
+}
+
+model promocion_producto {
+  cod_subcat_prod Int
+  cod_prom        Int
+
+  subcategoria subcategoria_producto @relation(fields: [cod_subcat_prod], references: [cod_subcat_prod], onDelete: Cascade, onUpdate: Cascade)
+  promocion    promocion             @relation(fields: [cod_prom], references: [cod_prom], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([cod_subcat_prod, cod_prom])
+}
+
+model recompensa_logro {
+  cod_rec   Int
+  cod_logro Int
+
+  recompensa recompensa @relation(fields: [cod_rec], references: [cod_rec], onDelete: Cascade, onUpdate: Cascade)
+  logro      logro      @relation(fields: [cod_logro], references: [cod_logro], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([cod_rec, cod_logro])
+}
+
+model promocion_servicio {
+  cod_prom Int
+  cod_serv Int
+
+  promocion promocion @relation(fields: [cod_prom], references: [cod_prom], onDelete: Cascade, onUpdate: Cascade)
+  servicio  servicio  @relation(fields: [cod_serv], references: [cod_serv], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([cod_prom, cod_serv])
+}
+
+model material_producto {
+  cod_mat  Int
+  cod_prod Int
+
+  material material @relation(fields: [cod_mat], references: [cod_mat], onDelete: Cascade, onUpdate: Cascade)
+  producto producto @relation(fields: [cod_prod], references: [cod_prod], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([cod_mat, cod_prod])
+}
+
+model evento {
+  cod_evento                Int        @id @default(autoincrement())
+  cod_org                   Int
+  titulo_evento             String     @unique @db.VarChar(100)
+  descripcion_evento        String     @db.VarChar(200)
+  fecha_registro_evento     DateTime   @default(now()) @db.Timestamp(6)
+  fecha_inicio_evento       DateTime   @db.Date
+  fecha_finalizacion_evento DateTime   @db.Date
+  duracion_evento           Int        @default(0)
+  banner_evento             Bytes?     @db.ByteA
+  cant_personas_inscritas   Int        @default(0)
+  ganancia_evento           Decimal    @default(0.0) @db.Decimal(12, 2)
+  estado_evento             EventState @default(vigente)
+  tipo_evento               EventType
+  costo_inscripcion         Decimal    @default(0.0) @db.Decimal(12, 2)
+
+  organizacion origanizacion @relation(fields: [cod_org], references: [cod_org], onDelete: Cascade, onUpdate: Cascade)
+
+  recompensas evento_recompensa[]
+}
+
+model evento_recompensa {
+  cod_evento Int
+  cod_rec    Int
+
+  evento     evento     @relation(fields: [cod_evento], references: [cod_evento], onDelete: Cascade, onUpdate: Cascade)
+  recompensa recompensa @relation(fields: [cod_rec], references: [cod_rec], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([cod_evento, cod_rec])
+}
+
+model potenciador {
+  cod_potenciador                Int          @id @default(autoincrement())
+  nombre_potenciador             String       @unique @db.VarChar(100)
+  precio_potenciador             Decimal      @default(0.0) @db.Decimal(12, 2)
+  descripcion_potenciador        String?      @db.VarChar(200)
+  multiplicador_potenciador      Decimal      @default(1.0) @db.Decimal(5, 2)
+  fecha_inicio_potenciador       DateTime     @db.Timestamp(6)
+  fecha_finalizacion_potenciador DateTime     @db.Timestamp(6)
+  duracion_potenciador           Int          @default(1)
+  nivel_potenciador              BoosterLevel @default(medio)
+}
+
+model usuario {
+  cod_us           Int       @id @default(autoincrement())
+  cod_rol          Int
+  cod_disp         Int
+  ci               String    @unique @db.VarChar(20)
+  nom_us           String    @db.VarChar(100)
+  handle_name      String    @unique @db.VarChar(50)
+  ap_pat_us        String    @db.VarChar(50)
+  ap_mat_us        String    @db.VarChar(50)
+  contra_us        String    @db.VarChar(100)
+  fecha_nacimiento DateTime  @db.Date
+  sexo             Sex
+  estado_us        UserState @default(activo)
+  correo_us        String    @db.VarChar(100)
+  telefono_us      String    @db.VarChar(20)
+  foto_us          Bytes?    @db.ByteA
+
+  rol            rol            @relation(fields: [cod_rol], references: [cod_rol], onDelete: Cascade, onUpdate: Cascade)
+  disponibilidad disponibilidad @relation(fields: [cod_disp], references: [cod_disp], onDelete: Cascade, onUpdate: Cascade)
+
+  billetera                billetera?
+  ubicaciones              ubicacion[]
+  accesos                  acceso[]
+  detalles                 detalle_usuario?
+  publicaciones            publicacion[]
+  calificaciones_dadas     calificacion[]   @relation("Calificador")
+  calificaciones_recibidas calificacion[]   @relation("Calificado")
+}
+
+model billetera {
+  cod_bill        Int     @id @default(autoincrement())
+  cod_us          Int     @unique
+  cuenta_bancaria String  @unique @db.VarChar(50)
+  saldo_actual    Decimal @default(0.0) @db.Decimal(12, 2)
+
+  usuario usuario @relation(fields: [cod_us], references: [cod_us], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model ubicacion {
+  cod_ubi      Int     @id @default(autoincrement())
+  cod_us       Int
+  latitud_ubi  Decimal @default(0.0) @db.Decimal(10, 6)
+  longitud_ubi Decimal @default(0.0) @db.Decimal(10, 6)
+  nom_ubi      String  @db.VarChar(100)
+
+  usuario usuario @relation(fields: [cod_us], references: [cod_us], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model acceso {
+  cod_acc    Int         @id @default(autoincrement())
+  cod_us     Int
+  estado_acc AccessState
+  fecha_acc  DateTime    @db.Timestamp(6)
+  contra_acc String      @db.VarChar(100)
+
+  usuario usuario @relation(fields: [cod_us], references: [cod_us], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model detalle_usuario {
+  cod_us           Int      @id @unique
+  cant_adv         Int      @default(0)
+  fecha_registro   DateTime @default(now()) @db.Timestamp(6)
+  cant_hrs_libres  Int      @default(0)
+  cant_dias_libres Int      @default(0)
+  dias_ocupados    Int      @default(0)
+  hrs_ocupadas     Int      @default(0)
+  calif_pond_us    Decimal  @default(0.0) @db.Decimal(2, 1)
+  cant_ventas      Int      @default(0)
+  huella_co2       Decimal  @default(0.0) @db.Decimal(10, 2)
+
+  usuario usuario @relation(fields: [cod_us], references: [cod_us], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model publicacion {
+  cod_pub         Int      @id @default(autoincrement())
+  cod_us          Int
+  fecha_ini_pub   DateTime @db.Date
+  fecha_fin_pub   DateTime @db.Date
+  foto_pub        Bytes?   @db.ByteA
+  calif_pond_pub  Decimal  @default(0.0) @db.Decimal(3, 2)
+  impacto_amb_pub Decimal  @default(0.0) @db.Decimal(10, 2)
+
+  usuario usuario @relation(fields: [cod_us], references: [cod_us], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model calificacion {
+  cod_calif          Int     @id @default(autoincrement())
+  calificacion_us    Decimal @default(0.0) @db.Decimal(2, 1)
+  cod_us_calificador Int
+  cod_us_calificado  Int
+
+  calificador usuario @relation("Calificador", fields: [cod_us_calificador], references: [cod_us], onDelete: Cascade, onUpdate: Cascade)
+  calificado  usuario @relation("Calificado", fields: [cod_us_calificado], references: [cod_us], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model equivalencia_co2 {
@@ -62,4 +335,81 @@ model equivalencia_co2 {
   fuente_datos        String?  @db.VarChar(200)
 
   @@unique([cod_mat, unidad_origen, unidad_destino], name: "UK_equiv_material_unidades")
+}
+
+enum AdvertenceState {
+  revisado
+  no_revisado
+}
+
+enum AdvertenceReason {
+  incumplimiento
+  contenido_indebido
+  lenguaje_inapropiado
+}
+
+enum RoleName {
+  usuario_comun
+  emprendedor
+  administrador
+}
+
+enum AchievementQuality {
+  Legendario
+  Epico
+  Especial
+  Comun
+}
+
+enum Category {
+  Producto
+  Servicio
+}
+
+enum ServiceState {
+  disponible
+  no_disponible
+}
+
+enum ProductQuality {
+  usado
+  nuevo
+}
+
+enum ProductState {
+  disponible
+  agotado
+}
+
+enum EventState {
+  vigente
+  finalizado
+}
+
+enum EventType {
+  benefico
+  monetizable
+}
+
+enum BoosterLevel {
+  debil
+  medio
+  fuerte
+}
+
+enum Sex {
+  M
+  F
+}
+
+enum UserState {
+  activo
+  suspendido
+  inactivo
+}
+
+enum AccessState {
+  exitoso
+  no_exitoso
+  logout
 }

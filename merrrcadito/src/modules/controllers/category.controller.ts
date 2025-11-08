@@ -21,3 +21,28 @@ export async function registerCategory(req: Request, res: Response) {
     });
   }
 }
+
+export async function updateCategory(req: Request, res: Response) {
+  try{
+    const cod_cat = req.query.cod_cat;
+    const attributes = req.body;
+    if(!cod_cat || !attributes){
+      return res.status(400).json({ message: 'Faltan parametros para la consulta: cod_cat u otros atributos.' });
+    }
+    if(typeof cod_cat !== 'string'){
+      return res.status(400).json({ message: 'Error de tipo en el atributo cod_cat.' });
+    }
+    const codCat = parseInt(cod_cat, 10);
+    const formatedAttributes = Object.fromEntries(
+      Object.entries(attributes).filter((v) => v !== undefined && v !== null)
+    );
+    const category_updated = await CategoryService.updateCategory(codCat, formatedAttributes);
+    return res.status(200).json({
+      message: 'Categoria actualizada con exito.',
+      category_updated
+    });
+  }catch(err){
+    console.error(err);
+    return res.status(500).json({ message: 'Error de servidor al intentar actualizar la subcategoria.' })
+  }
+}

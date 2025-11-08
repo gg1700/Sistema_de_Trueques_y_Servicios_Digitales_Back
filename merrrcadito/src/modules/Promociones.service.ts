@@ -1,7 +1,7 @@
 import * as dotenv from 'dotenv';
 import connectToDatabase from '../database';
 import { PrismaClient } from '@prisma/client';
-import { Bytes } from '@prisma/client/runtime/library';
+import { Bytes } from '@/generated/prisma/internal/prismaNamespace';
 
 dotenv.config();
 

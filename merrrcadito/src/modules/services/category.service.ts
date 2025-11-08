@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { Bytes } from '@/generated/prisma/internal/prismaNamespace';
+import { Category, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -21,4 +22,29 @@ export async function registerCategory(
   } catch (error) {
     throw error;
   }
+}
+
+interface CategoryInfo {
+  nom_cat: string | null,
+  descr_cat: string | null,
+  imagen_repr: Bytes | null,
+  tipo_cat: Category | null
+}
+
+export async function updateCategory(cod_cat: number, attributes: Partial<CategoryInfo>) {
+  try{
+    const { nom_cat, descr_cat, imagen_repr, tipo_cat } = attributes;
+    const category_updated = await prisma.$queryRaw`
+      SELECT * FROM sp_actualizarcategoria(
+        ${cod_cat}::INTEGER,
+        ${nom_cat ?? null}::VARCHAR,
+        ${descr_cat ?? null}::VARCHAR,
+        ${imagen_repr ?? null}::BYTEA,
+        ${tipo_cat ?? null}::VARCHAR
+      )
+    `;
+    return category_updated;
+  }catch(err){
+    throw new Error((err as Error).message);
+  } 
 }

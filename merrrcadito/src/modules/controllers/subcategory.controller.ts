@@ -42,3 +42,28 @@ export async function getSubcategory(req: Request, res: Response){
     });
   }
 }
+
+export async function updateSubcategory(req: Request, res: Response) {
+  try{
+    const cod_subcat_prod = req.query.cod_subcat_prod;
+    const attributes = req.body;
+    if(!cod_subcat_prod || !attributes){
+      return res.status(400).json({ message: 'Faltan parametros para la consulta: cod_subcat_prod u otros atributos.' });
+    }
+    if(typeof cod_subcat_prod !== 'string'){
+      return res.status(400).json({ message: 'Error de tipo en el atributo cod_subcat_prod.' });
+    }
+    const codSubcatProd = parseInt(cod_subcat_prod, 10);
+    const formatedAttributes = Object.fromEntries(
+      Object.entries(attributes).filter((v) => v !== undefined && v !== null)
+    );
+    const subcategory_updated = await SubcategoryService.updateSubcategory(codSubcatProd, formatedAttributes);
+    return res.status(200).json({
+      message: 'Subcategoria actualizada con exito.',
+      subcategory_updated
+    });
+  }catch(err){
+    console.error(err);
+    return res.status(500).json({ message: 'Error de servidor al intentar actualizar la subcategoria.' });
+  }
+}

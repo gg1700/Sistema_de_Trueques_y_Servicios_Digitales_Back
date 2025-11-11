@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "mer": "npx ts-node src/app.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",

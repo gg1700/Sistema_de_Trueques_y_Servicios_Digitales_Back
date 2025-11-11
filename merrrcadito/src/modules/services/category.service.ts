@@ -1,5 +1,4 @@
-import { Bytes } from '@/generated/prisma/internal/prismaNamespace';
-import { Category, PrismaClient } from '@prisma/client';
+import { Category, PrismaClient, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -27,7 +26,7 @@ export async function registerCategory(
 interface CategoryInfo {
   nom_cat: string | null,
   descr_cat: string | null,
-  imagen_repr: Bytes | null,
+  imagen_repr: Uint8Array | null,
   tipo_cat: Category | null
 }
 

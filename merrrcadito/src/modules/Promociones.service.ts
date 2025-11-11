@@ -1,7 +1,6 @@
 import * as dotenv from 'dotenv';
 import connectToDatabase from '../database';
-import { PrismaClient } from '@prisma/client';
-import { Bytes } from '@/generated/prisma/internal/prismaNamespace';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 dotenv.config();
 
@@ -21,7 +20,7 @@ async function registrar_promocion(current_promotion: {
     fecha_ini_prom: Date;
     fecha_fin_prom: Date;
     descr_prom: string;
-    banner_prom: Bytes;
+    banner_prom: Uint8Array;
     descuento_prom: number}) {
     try{
         await setDatabaseConnection();     

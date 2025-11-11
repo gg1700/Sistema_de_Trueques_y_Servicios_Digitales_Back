@@ -1,5 +1,4 @@
-import { Bytes } from "@/generated/prisma/internal/prismaNamespace";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -38,7 +37,7 @@ export async function getSubcategory() {
 interface SubcategoryInfo {
   cod_cat: number | null,
   nom_subcat_prod: string | null,
-  imagen_representativa: Bytes | null,
+  imagen_representativa: Uint8Array | null,
   descr_subcat_prod: string | null
 }
 

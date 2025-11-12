@@ -43,6 +43,22 @@ export async function updateCategory(req: Request, res: Response) {
     });
   }catch(err){
     console.error(err);
-    return res.status(500).json({ message: 'Error de servidor al intentar actualizar la subcategoria.' })
+    return res.status(500).json({ message: 'Error de servidor al intentar actualizar la subcategoria.' });
+  }
+}
+
+export async function getAllSubcategories(req: Request, res: Response){
+  try{
+    const all_categories = await CategoryService.get_all_categories();
+    if(!all_categories){
+      return res.status(400).json({ message: 'No se encontraron categorias.' });
+    }
+    return res.status(200).json({
+      message: 'Todas las categorias fueron accesadas correctamente.',
+      all_categories
+    });
+  }catch(err){
+    console.error(err);
+    return res.status(500).json({ message: 'Error de servidor al intentar obtener toda la informacion de categorias.' });
   }
 }

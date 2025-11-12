@@ -47,3 +47,14 @@ export async function updateCategory(cod_cat: number, attributes: Partial<Catego
     throw new Error((err as Error).message);
   } 
 }
+
+export async function get_all_categories(){
+  try{
+    const all_categories = await prisma.$queryRaw`
+      SELECT * FROM sp_get_categories()
+    `;
+    return all_categories;
+  }catch(err){
+    throw new Error((err as Error).message);
+  }
+}

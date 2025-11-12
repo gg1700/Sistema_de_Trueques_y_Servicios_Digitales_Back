@@ -175,7 +175,15 @@ $$;
 -- Filtra los registros de la tabla CATEGORIA comparando el campo tipo_cat (en minúsculas) con el valor 'servicio'.
 -- Devuelve únicamente el código y el nombre de cada categoría, ordenados por su código.
 CREATE OR REPLACE FUNCTION sp_getCategoriasServicio()
-RETURNS TABLE(cod_cat INT, nom_cat VARCHAR) LANGUAGE plpgsql AS $$
+RETURNS TABLE(
+    cod_cat INT,
+    nom_cat VARCHAR,
+    descr_cat VARCHAR,
+    imagen_repr BYTEA,
+    tipo_cat VARCHAR
+)
+              
+LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
     SELECT c.cod_cat, c.nom_cat
@@ -252,6 +260,8 @@ CREATE OR REPLACE FUNCTION sp_getSubcategorias()
 RETURNS TABLE(
     cod_subcat_prod INT,
     nom_subcat_prod VARCHAR,
+    descr_subcat_prod VARCHAR,
+    imagen_representativa BYTEA,
     cod_cat INT
 ) LANGUAGE plpgsql AS $$
 BEGIN

@@ -266,7 +266,7 @@ RETURNS TABLE(
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
-    SELECT sub.cod_subcat_prod, sub.nom_subcat_prod, sub.cod_cat
+    SELECT sub.cod_subcat_prod, sub.nom_subcat_prod, sub.descr_subcat_prod, sun.imagen_repr, sub.cod_cat
     FROM subcategoria_producto sub
     ORDER BY sub.cod_cat;
 END;

@@ -8,84 +8,74 @@ export class CategoryController {
   /**
    * Crear una nueva categoría
    * POST /api/categories
+   * (Ahora llama a sp_registrarCategoria)
    */
   static async createCategory(req: Request, res: Response) {
     try {
       const { nom_cat, descr_cat, tipo_cat } = req.body;
       
-      // Validar que se haya subido una imagen
+      // --- (TODA TU LÓGICA DE VALIDACIÓN SIGUE IGUAL) ---
       if (!req.file) {
-        return res.status(400).json({
-          success: false,
-          message: 'La imagen es requerida',
-        });
+        return res.status(400).json({ success: false, message: 'La imagen es requerida' });
       }
-
-      // Validar campos requeridos
       if (!nom_cat || !descr_cat || !tipo_cat) {
-        return res.status(400).json({
-          success: false,
-          message: 'Todos los campos son requeridos',
-        });
+        return res.status(400).json({ success: false, message: 'Todos los campos son requeridos' });
       }
-
-      // Validar tipo de categoría
       if (!['Producto', 'Servicio'].includes(tipo_cat)) {
-        return res.status(400).json({
-          success: false,
-          message: 'El tipo de categoría debe ser "Producto" o "Servicio"',
-        });
+        return res.status(400).json({ success: false, message: 'Tipo no válido' });
       }
-
-      // Validar que la imagen sea válida
       const isValidImage = await ImageService.validateImage(req.file.buffer);
       if (!isValidImage) {
-        return res.status(400).json({
-          success: false,
-          message: 'El archivo no es una imagen válida',
-        });
+        return res.status(400).json({ success: false, message: 'No es una imagen válida' });
       }
+      // --- (FIN DE LA VALIDACIÓN) ---
 
-      // Procesar y optimizar la imagen
+      // Procesar y optimizar la imagen (igual que antes)
       const processedImage = await ImageService.processImage(req.file.buffer, {
         width: 800,
         height: 800,
         quality: 85,
         format: 'jpeg',
       });
+      
+      // Convertir a Buffer
+      const imageBuffer = Buffer.from(processedImage);
 
-      // Crear la categoría en la base de datos
-      const newCategory = await prisma.categoria.create({
-        data: {
-          nom_cat,
-          descr_cat,
-          tipo_cat: tipo_cat as Category,
-          imagen_repr: Buffer.from(processedImage) as any,
-        },
-      });
+      // --- CAMBIO PRINCIPAL: LLAMADA AL PROCEDIMIENTO ---
+      // Usamos $executeRaw para llamar a un PROCEDIMIENTO (o una función que devuelve void)
+      await prisma.$executeRaw`
+        CALL sp_registrarCategoria(
+          ${nom_cat}, 
+          ${descr_cat}, 
+          ${imageBuffer}, 
+          ${tipo_cat}::"Category"
+        )
+      `;
+      // Nota: El '::"Category"' es para castear el string al tipo ENUM de tu DB.
 
+      // Como el SP no devuelve el ID, no podemos retornarlo fácilmente.
+      // Puedes modificar el SP para que sea una FUNCIÓN y devuelva el ID,
+      // pero por ahora, solo confirmamos la creación.
       return res.status(201).json({
         success: true,
         message: 'Categoría creada exitosamente',
         data: {
-          cod_cat: newCategory.cod_cat,
-          nom_cat: newCategory.nom_cat,
-          descr_cat: newCategory.descr_cat,
-          tipo_cat: newCategory.tipo_cat,
-          hasImage: !!newCategory.imagen_repr,
+          nom_cat: nom_cat,
+          descr_cat: descr_cat,
+          tipo_cat: tipo_cat,
+          hasImage: true,
         },
       });
+
     } catch (error: any) {
       console.error('Error creando categoría:', error);
-      
-      // Manejar error de nombre duplicado
-      if (error.code === 'P2002') {
+      // P2002 es el código de error de Prisma para 'Unique constraint failed'
+      if (error.code === 'P2002' || (error.message && error.message.includes('unique constraint'))) {
         return res.status(409).json({
           success: false,
           message: 'Ya existe una categoría con ese nombre',
         });
       }
-
       return res.status(500).json({
         success: false,
         message: 'Error interno del servidor',
@@ -97,33 +87,24 @@ export class CategoryController {
   /**
    * Obtener todas las categorías
    * GET /api/categories
+   * (Ahora llama a sp_getAllCategories)
    */
   static async getAllCategories(req: Request, res: Response) {
     try {
       const { tipo_cat } = req.query;
 
-      const whereClause = tipo_cat
-        ? { tipo_cat: tipo_cat as Category }
-        : {};
-
-      const categories = await prisma.categoria.findMany({
-        where: whereClause,
-        select: {
-          cod_cat: true,
-          nom_cat: true,
-          descr_cat: true,
-          tipo_cat: true,
-          // No incluimos imagen_repr por defecto para mejorar rendimiento
-        },
-        orderBy: {
-          cod_cat: 'desc',
-        },
-      });
+      // --- CAMBIO PRINCIPAL: LLAMADA A LA FUNCIÓN ---
+      // Usamos $queryRaw para llamar a una FUNCIÓN que devuelve una TABLA
+      const categories = await prisma.$queryRaw`
+        SELECT * FROM sp_getAllCategories(${tipo_cat as string || null})
+      `;
+      // El '|| null' es para pasar NULL al SP si tipo_cat no está definido.
 
       return res.status(200).json({
         success: true,
         data: categories,
       });
+      
     } catch (error: any) {
       console.error('Error obteniendo categorías:', error);
       return res.status(500).json({
@@ -137,16 +118,19 @@ export class CategoryController {
   /**
    * Obtener una categoría por ID
    * GET /api/categories/:id
+   * (Ahora llama a sp_verCategoria)
    */
   static async getCategoryById(req: Request, res: Response) {
     try {
       const { id } = req.params;
 
-      const category = await prisma.categoria.findUnique({
-        where: {
-          cod_cat: parseInt(id),
-        },
-      });
+      // --- CAMBIO PRINCIPAL: LLAMADA A LA FUNCIÓN ---
+      const categories = await prisma.$queryRaw`
+        SELECT * FROM sp_verCategoria(${parseInt(id)})
+      ` as any;
+      
+      // $queryRaw siempre devuelve un array.
+      const category = categories[0]; 
 
       if (!category) {
         return res.status(404).json({

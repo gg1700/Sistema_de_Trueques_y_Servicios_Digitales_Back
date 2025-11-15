@@ -8,14 +8,17 @@ import EquivalenceRoutes from '../modules/routes/equivalence.routes';
 const router = Router();
 
 router.use('/api/promociones', PromocionesRoutes);
-router.use('/api/category', CategoryRoutes);
-router.use('/api/subcategory', SubcategoryRoutes);
-router.use('/api/equivalence', EquivalenceRoutes);
+router.use('/api/categories', CategoryRoutes);
+router.use('/api/subcategories', SubcategoryRoutes);
+router.use('/api/equivalences', EquivalenceRoutes);
+
 router.use('/', HealthCheck);
+
 
 router.use((req, res) => {
   console.log('Not found:', req.method, req.originalUrl);
-  res.status(400).send({
+  res.status(404).send({
+    success: false,
     message: 'Route not found.',
   });
 });

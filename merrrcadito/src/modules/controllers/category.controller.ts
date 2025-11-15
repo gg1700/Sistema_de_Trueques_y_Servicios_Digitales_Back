@@ -48,7 +48,7 @@ export class CategoryController {
           ${nom_cat}, 
           ${descr_cat}, 
           ${imageBuffer}, 
-          ${tipo_cat}::"Category"
+          ${tipo_cat}
         )
       `;
       // Nota: El '::"Category"' es para castear el string al tipo ENUM de tu DB.

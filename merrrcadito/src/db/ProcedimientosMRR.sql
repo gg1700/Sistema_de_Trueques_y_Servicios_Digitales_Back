@@ -1252,3 +1252,33 @@ BEGIN
     WHERE cod_bill = _p_cod_bill;
 END;
 $$;
+
+
+
+
+
+CREATE OR REPLACE FUNCTION sp_getAllCategories(
+    _p_tipo_cat VARCHAR(20) DEFAULT NULL
+)
+RETURNS TABLE(
+    cod_cat INT,
+    nom_cat VARCHAR,
+    descr_cat VARCHAR,
+    tipo_cat VARCHAR -- Asumo que el tipo ENUM "Category" se puede tratar como VARCHAR
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN QUERY
+    SELECT
+        c.cod_cat,
+        c.nom_cat,
+        c.descr_cat,
+        c.tipo_cat::VARCHAR -- Convertimos el ENUM a VARCHAR
+    FROM CATEGORIA c
+    WHERE
+        -- Si _p_tipo_cat es NULL, la segunda parte (TRUE) se cumple y trae todo.
+        -- Si _p_tipo_cat TIENE VALOR, la primera parte se cumple.
+        (LOWER(c.tipo_cat::VARCHAR) = LOWER(_p_tipo_cat) OR _p_tipo_cat IS NULL)
+    ORDER BY c.cod_cat DESC; -- Igual que en tu controller original
+END;
+$$;

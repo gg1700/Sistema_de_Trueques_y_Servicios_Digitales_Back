@@ -10,8 +10,8 @@ interface PostInfo {
 }
 
 export async function create_post(cod_us: string, cod_prod: string, current_post: Partial<PostInfo>, image_buffer: Buffer) {
-    try{
-        if(current_post.estado_pub === null || current_post.estado_pub === undefined){
+    try {
+        if (current_post.estado_pub === null || current_post.estado_pub === undefined) {
             current_post.estado_pub = 'activo';
         }
         await prisma.$queryRaw`
@@ -26,7 +26,18 @@ export async function create_post(cod_us: string, cod_prod: string, current_post
             )
         `;
         return { success: true, message: "Publicación creada correctamente" };
-    }catch(err){
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}
+
+export async function get_all_active_product_posts() {
+    try {
+        const posts = await prisma.$queryRaw`
+            SELECT * FROM sp_obtenerpublicacionesproducto()
+        `;
+        return posts;
+    }catch (err) {
         throw new Error((err as Error).message);
     }
 }

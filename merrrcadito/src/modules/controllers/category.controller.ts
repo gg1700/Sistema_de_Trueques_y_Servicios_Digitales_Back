@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient, Category } from '@prisma/client';
 import { ImageService } from '../services/image.service';
+import * as CategoryService from '../services/category.service';
 
 const prisma = new PrismaClient();
 
@@ -13,7 +14,7 @@ export class CategoryController {
   static async createCategory(req: Request, res: Response) {
     try {
       const { nom_cat, descr_cat, tipo_cat } = req.body;
-      
+
       // --- (TODA TU LÓGICA DE VALIDACIÓN SIGUE IGUAL) ---
       if (!req.file) {
         return res.status(400).json({ success: false, message: 'La imagen es requerida' });
@@ -37,7 +38,7 @@ export class CategoryController {
         quality: 85,
         format: 'jpeg',
       });
-      
+
       // Convertir a Buffer
       const imageBuffer = Buffer.from(processedImage);
 
@@ -104,47 +105,9 @@ export class CategoryController {
         success: true,
         data: categories,
       });
-      
+
     } catch (error: any) {
       console.error('Error obteniendo categorías:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
-        error: error.message,
-      });
-    }
-  }
-
-  /**
-   * Obtener una categoría por ID
-   * GET /api/categories/:id
-   * (Ahora llama a sp_verCategoria)
-   */
-  static async getCategoryById(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-
-      // --- CAMBIO PRINCIPAL: LLAMADA A LA FUNCIÓN ---
-      const categories = await prisma.$queryRaw`
-        SELECT * FROM sp_verCategoria(${parseInt(id)})
-      ` as any;
-      
-      // $queryRaw siempre devuelve un array.
-      const category = categories[0]; 
-
-      if (!category) {
-        return res.status(404).json({
-          success: false,
-          message: 'Categoría no encontrada',
-        });
-      }
-
-      return res.status(200).json({
-        success: true,
-        data: category,
-      });
-    } catch (error: any) {
-      console.error('Error obteniendo categoría:', error);
       return res.status(500).json({
         success: false,
         message: 'Error interno del servidor',
@@ -180,7 +143,7 @@ export class CategoryController {
       // Configurar headers para servir la imagen
       res.set('Content-Type', 'image/jpeg');
       res.set('Cache-Control', 'public, max-age=31536000');
-      
+
       return res.send(category.imagen_repr);
     } catch (error: any) {
       console.error('Error obteniendo imagen:', error);
@@ -215,7 +178,7 @@ export class CategoryController {
 
       // Preparar datos para actualizar
       const updateData: any = {};
-      
+
       if (nom_cat) updateData.nom_cat = nom_cat;
       if (descr_cat) updateData.descr_cat = descr_cat;
       if (tipo_cat) {
@@ -267,7 +230,7 @@ export class CategoryController {
       });
     } catch (error: any) {
       console.error('Error actualizando categoría:', error);
-      
+
       if (error.code === 'P2002') {
         return res.status(409).json({
           success: false,
@@ -320,5 +283,36 @@ export class CategoryController {
         error: error.message,
       });
     }
+  }
+}
+
+export async function getCategoryProductReportByMonth(req: Request, res: Response) {
+  try {
+    const { month } = req.query;
+    if (!month || typeof month !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Mes inválido.'
+      });
+    }
+    const report = await CategoryService.get_category_product_report_by_month(month);
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: 'No se encontró el reporte para el mes especificado.',
+        data: []
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      message: 'Reporte de categorías de productos por mes obtenido correctamente.',
+      data: report
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener el reporte de categorías de productos por mes: ',
+      error: (err as Error).message
+    });
   }
 }

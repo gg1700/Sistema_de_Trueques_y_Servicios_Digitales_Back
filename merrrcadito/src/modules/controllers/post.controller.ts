@@ -54,3 +54,27 @@ export async function createPost(req: Request, res: Response) {
         });
     }
 }
+
+export async function getAllActiveProductPosts(req: Request, res: Response) {
+    try{
+        const active_product_posts = await PostService.get_all_active_product_posts();
+        if(!active_product_posts){
+            return res.status(404).json({
+                success: false,
+                message: 'No se encontraron publicaciones activas de productos.',
+                data: []
+            });
+        }
+        return res.status(200).json({
+            success: true,
+            message: 'Publicaciones activas del producto obtenidas correctamente.',
+            data: active_product_posts
+        });
+    }catch(err){
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener las publicaciones activas del producto: ',
+            error: (err as Error).message
+        });
+    }
+}

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { CategoryController } from '../controllers/category.controller';
 import { upload, handleMulterError } from '../../config/multer.config';
+import * as CategoryControllerModule from '../controllers/category.controller';
 
 const router = Router();
 
@@ -23,13 +24,6 @@ router.post(
  * @access  Public
  */
 router.get('/', CategoryController.getAllCategories);
-
-/**
- * @route   GET /api/categories/:id
- * @desc    Obtener una categoría por ID
- * @access  Public
- */
-router.get('/:id', CategoryController.getCategoryById);
 
 /**
  * @route   GET /api/categories/:id/image
@@ -56,5 +50,7 @@ router.put(
  * @access  Private (Admin)
  */
 router.delete('/:id', CategoryController.deleteCategory);
+
+router.get('/report_category_product_by_month', CategoryControllerModule.getCategoryProductReportByMonth);
 
 export default router;

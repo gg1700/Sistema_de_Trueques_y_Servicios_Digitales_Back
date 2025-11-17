@@ -58,3 +58,19 @@ export async function get_all_categories(){
     throw new Error((err as Error).message);
   }
 }
+
+export async function get_category_product_report_by_month(month: string) {
+  try{
+    const current_date = new Date(Date.now());
+    const current_year = current_date.getFullYear();
+    const date = `${current_year}-${month}-01`;
+    const category_report = await prisma.$queryRaw`
+      SELECT * FROM sp_reportecategoriaproductosmes(
+        ${date}::TIMESTAMP
+      )
+    `;
+    return category_report;
+  }catch(err){
+    throw new Error((err as Error).message);
+  }
+}

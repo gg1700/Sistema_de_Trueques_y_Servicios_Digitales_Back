@@ -11,7 +11,7 @@ const router = Router();
  */
 router.post(
   '/',
-  upload.single('imagen_repr'),
+|  upload.single('imagen_repr'),
   handleMulterError,
   CategoryController.createCategory
 );

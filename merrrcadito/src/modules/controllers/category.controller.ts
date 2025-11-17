@@ -117,44 +117,6 @@ export class CategoryController {
   }
 
   /**
-   * Obtener una categoría por ID
-   * GET /api/categories/:id
-   * (Ahora llama a sp_verCategoria)
-   */
-  static async getCategoryById(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-    const categoryId = parseInt(id);
-
-    // Usa CAST en SQL en lugar de ::
-    const categories = await prisma.$queryRaw`
-      SELECT * FROM sp_vercategoria(CAST(${categoryId} AS INTEGER))
-    ` as any;
-
-    const category = categories[0];
-
-    if (!category) {
-      return res.status(404).json({
-        success: false,
-        message: 'Categoría no encontrada',
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      data: category,
-    });
-  } catch (error: any) {
-    console.error('Error obteniendo categoría:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error interno del servidor',
-      error: error.message,
-    });
-  }
-}
-
-  /**
    * Obtener la imagen de una categoría
    * GET /api/categories/:id/image
    */

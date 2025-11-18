@@ -7,4 +7,10 @@ router.get('/activity_report_by_week', UserController.getUsersActivityReportByWe
 
 router.get('/activity_report_by_month', UserController.getUsersActivityReportByMonth);
 
+router.post('/register', UserController.registerUser);
+
+router.get('/get_user_data', UserController.getUserData);
+
+router.get('/get_user_posts', UserController.getUserPosts);
+
 export default router;

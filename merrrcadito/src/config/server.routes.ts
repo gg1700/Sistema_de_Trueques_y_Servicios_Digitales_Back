@@ -12,10 +12,12 @@ import AccessRoutes from '../modules/routes/access.routes';
 import WalletRoutes from '../modules/routes/wallet.routes';
 import TransactionRoutes from '../modules/routes/transaction.routes';
 import TokenPackageRoutes from '../modules/routes/token_package.routes';
+import AchievementRoutes from '../modules/routes/achievment.routes';
+import PublicationRoutes from '../modules/routes/publication.routes';
 
 const router = Router();
 
-router.use('/api/promotion', PromotionRoutes);
+router.use('/api/promotions', PromotionRoutes);
 router.use('/api/categories', CategoryRoutes);
 router.use('/api/subcategories', SubcategoryRoutes);
 router.use('/api/equivalences', EquivalenceRoutes);
@@ -27,6 +29,8 @@ router.use('/api/wallets', WalletRoutes);
 router.use('/api/transactions', TransactionRoutes);
 router.use('/api/organization', OrganizationRoutes);
 router.use('/api/token_package', TokenPackageRoutes);
+router.use('/api/achievments', AchievementRoutes);
+router.use('/api/publications', PublicationRoutes);
 
 router.use('/', HealthCheck);
 

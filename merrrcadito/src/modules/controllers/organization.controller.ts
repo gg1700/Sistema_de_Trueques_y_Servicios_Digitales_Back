@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import * as OrganizationService from '../services/organization.service';
 
 const prisma = new PrismaClient();
 
@@ -26,6 +27,64 @@ export async function getOrganizationLogo(req: Request, res: Response) {
       success: false,
       message: 'Error interno del servidor',
       error
+    });
+  }
+}
+
+export async function registerOrganization(req: Request, res: Response) {
+  try {
+    const {
+      nom_com_org,
+      nom_leg_org,
+      tipo_org,
+      rubro_org,
+      cif,
+      correo_org,
+      telf_org,
+      dir_org,
+      sitio_web
+    } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "El logo de la organización es obligatorio."
+      });
+    }
+
+    if (!nom_com_org || !nom_leg_org || !cif || !correo_org || !rubro_org) {
+      return res.status(400).json({
+        success: false,
+        message: "Faltan campos obligatorios para el registro."
+      });
+    }
+
+    const orgData = {
+      nom_com_org,
+      nom_leg_org,
+      tipo_org,
+      rubro_org,
+      cif,
+      correo_org,
+      telf_org,
+      dir_org,
+      sitio_web
+    };
+
+    const result = await OrganizationService.register_organization(orgData, req.file.buffer);
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    return res.status(201).json(result);
+
+  } catch (error) {
+    console.error("Error en registerOrganization:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error interno al registrar la organización",
+      error: (error as Error).message
     });
   }
 }

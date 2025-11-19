@@ -9,6 +9,7 @@ interface TransactionInfo {
     descr_trans: string | null,
     moneda: 'CV' | 'Bs',
     monto_regalo: number | null,
+    id_token: string | null
 }
 
 export async function register_transaction(cod_us_origen: string, attributes: Partial<TransactionInfo>) {
@@ -25,7 +26,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
         let cod_us_destino = null;
         let trans_owner = null;
         // Verificar si es una publicación o un evento
-        if (attributes.cod_pub != null && attributes.cod_evento == null) {
+        if (attributes.cod_pub != null && attributes.cod_evento == null && attributes.id_token == null) {
             // Es una publicación
             const exists_pub = await prisma.$queryRaw`
                 SELECT * FROM sp_verificarexistenciacodpublicacion(${attributes.cod_pub ?? null}::INTEGER) AS result_pub
@@ -74,7 +75,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                     `;
                 }
             }
-        } else if (attributes.cod_evento != null && attributes.cod_pub == null) {
+        } else if (attributes.cod_evento != null && attributes.cod_pub == null && attributes.id_token == null) {
             // Es un evento
             const exists_event = await prisma.$queryRaw`
                 SELECT * FROM sp_verificarexistenciacodevento(${attributes.cod_evento ?? null}::INTEGER) AS result_event
@@ -111,12 +112,50 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                 // Determinar el estado de la transacción según el saldo del usuario origen y el costo del evento
                 if (saldo_actual < costo_inscripcion) {
                     estado_trans = 'no_satisfactorio';
-                }else {
+                } else {
                     estado_trans = 'satisfactorio';
                     // Actualizar el saldo del usuario origen
                     await prisma.$queryRaw`
                         UPDATE billetera
                         SET saldo_actual = saldo_actual - ${costo_inscripcion}::DECIMAL
+                        WHERE cod_us = ${cod_us_origen}::INTEGER
+                    `;
+                }
+            }
+        } else if (attributes.id_token != null && attributes.cod_pub == null && attributes.cod_evento == null) {
+            // Es la compra de un paquete de tokens
+            const exists_token = await prisma.$queryRaw`
+                SELECT * FROM sp_verificarexistenciapaquetetoken(${attributes.id_token ?? null}::INTEGER) AS result_token
+            `;
+            const [ans2] = exists_token as any[];
+            const { result_token } = ans2;
+            // Verificar si el paquete de tokens existe
+            if (!result_token) {
+                throw new Error('El codigo del paquete de token no existe.');
+            } else {
+                // Verificar saldo del usuario origen
+                const saldo_us_origen: any[] = await prisma.$queryRaw`
+                    SELECT saldo_actual FROM billetera
+                    WHERE cod_us = ${cod_us_origen}::INTEGER
+                `;
+                const [wallet_origin] = saldo_us_origen;
+                const { saldo_actual } = wallet_origin;
+                const event_cost: any[] = await prisma.$queryRaw`
+                    SELECT precio_real FROM paquete_token
+                    WHERE id = ${attributes.id_token}::INTEGER
+                `;
+                const [event] = event_cost;
+                const { precio_real } = event;
+
+                // Determinar el estado de la transacción según el saldo del usuario origen y el costo del evento
+                if (saldo_actual < precio_real) {
+                    estado_trans = 'no_satisfactorio';
+                } else {
+                    estado_trans = 'satisfactorio';
+                    // Actualizar el saldo del usuario origen
+                    await prisma.$queryRaw`
+                        UPDATE billetera
+                        SET saldo_actual = saldo_actual - ${precio_real}::DECIMAL
                         WHERE cod_us = ${cod_us_origen}::INTEGER
                     `;
                 }
@@ -138,7 +177,8 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                 ${attributes.descr_trans ?? null}::VARCHAR,
                 ${attributes.moneda}::"Currency",
                 ${attributes.monto_regalo ?? null}::DECIMAL,
-                ${estado_trans}::"TransactionState"
+                ${estado_trans}::"TransactionState",
+                ${attributes.id_token ?? null}::INTEGER
             )
         `;
         return { success: true, message: "Transacción registrada correctamente" };
@@ -147,3 +187,22 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
     }
 }
 
+export async function get_user_transaction_history(cod_us: string) {
+    try {   
+        const transaction_history : TransactionInfo[] = await prisma.$queryRaw`
+            SELECT * FROM sp_obtenerhistorialtransaccionesusuario(
+                ${cod_us}::INTEGER
+            )
+        `;
+        const filtered_transaction_history : TransactionInfo[] = []
+        for (const transaction of transaction_history) {
+            const filtered_transaction = Object.fromEntries(
+                Object.entries(transaction).filter(([_, v]) => v !== null)
+            ) as TransactionInfo;
+            filtered_transaction_history.push(filtered_transaction);
+        }
+        return filtered_transaction_history;
+    } catch (err) {
+        throw new Error((err as Error).message)
+    }
+}

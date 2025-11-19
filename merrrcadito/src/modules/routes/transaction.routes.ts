@@ -5,4 +5,6 @@ const router = Router();
 
 router.post('/register', TransactionController.registerTransaction);
 
+router.get('/get_user_transaction_history', TransactionController.getUserTransactionHistory);
+
 export default router;

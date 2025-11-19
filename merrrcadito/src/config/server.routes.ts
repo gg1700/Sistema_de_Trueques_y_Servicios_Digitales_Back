@@ -11,6 +11,7 @@ import OrganizationRoutes from '../modules/routes/organization.routes';
 import AccessRoutes from '../modules/routes/access.routes';
 import WalletRoutes from '../modules/routes/wallet.routes';
 import TransactionRoutes from '../modules/routes/transaction.routes';
+import TokenPackageRoutes from '../modules/routes/token_package.routes';
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.use('/api/access', AccessRoutes);
 router.use('/api/wallets', WalletRoutes);
 router.use('/api/transactions', TransactionRoutes);
 router.use('/api/organization', OrganizationRoutes);
+router.use('/api/token_package', TokenPackageRoutes);
 
 router.use('/', HealthCheck);
 

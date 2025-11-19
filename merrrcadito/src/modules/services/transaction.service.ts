@@ -146,4 +146,3 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
         throw new Error((err as Error).message);
     }
 }
-

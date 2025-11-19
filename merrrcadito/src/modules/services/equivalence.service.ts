@@ -23,4 +23,4 @@ export async function registrarEquivalencia(
     } catch (err) {
         throw err;
     }
-}
+}   

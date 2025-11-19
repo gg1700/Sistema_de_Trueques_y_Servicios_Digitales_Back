@@ -4,7 +4,13 @@ import CategoryRoutes from '../modules/routes/category.routes';
 import HealthCheck from '../modules/routes/healthcheck.routes';
 import SubcategoryRoutes from '../modules/routes/subcategory.routes';
 import EquivalenceRoutes from '../modules/routes/equivalence.routes';
+import ProductRoutes from '../modules/routes/product.routes';
+import PostRoutes from '../modules/routes/post.routes';
+import UserRoutes from '../modules/routes/user.routes';
 import OrganizationRoutes from '../modules/routes/organization.routes';
+import AccessRoutes from '../modules/routes/access.routes';
+import WalletRoutes from '../modules/routes/wallet.routes';
+import TransactionRoutes from '../modules/routes/transaction.routes';
 
 const router = Router();
 
@@ -12,6 +18,12 @@ router.use('/api/promotion', PromotionRoutes);
 router.use('/api/categories', CategoryRoutes);
 router.use('/api/subcategories', SubcategoryRoutes);
 router.use('/api/equivalences', EquivalenceRoutes);
+router.use('/api/products', ProductRoutes);
+router.use('/api/posts', PostRoutes);
+router.use('/api/users', UserRoutes);
+router.use('/api/access', AccessRoutes);
+router.use('/api/wallets', WalletRoutes);
+router.use('/api/transactions', TransactionRoutes);
 router.use('/api/organization', OrganizationRoutes);
 
 router.use('/', HealthCheck);

@@ -248,18 +248,17 @@ export async function getUserImage(req: Request, res: Response) {
 
 export async function updateCo2Impact (req: Request, res: Response) {
     try {
-        const { cod_us } = req.query;
-        if (!cod_us || typeof cod_us !== 'string') {
+        const { cod_us, cod_pub } = req.query;
+        if (!cod_us || typeof cod_us !== 'string' || !cod_pub || typeof cod_pub !== 'string') {
             return res.status(400).json({
                 success: false,
                 message: 'Codigo de usuario invalido.'
             })
         }
-        const result = await UserService.update_co2_impact(cod_us);
+        const result = await UserService.update_co2_impact_post(cod_us, cod_pub);
         return res.status(200).json({
-            success: true,
-            message: 'Nivel de impacto ambiental del usuario actualizado correctamente',
-            data: result
+            success: result.success,
+            message: result.message
         });
     } catch (err) {
         return res.status(500).json({

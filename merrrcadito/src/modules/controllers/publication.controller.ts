@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 export async function getPublicacionPhoto(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const result: any = prisma.$queryRaw`
+    const result: any = await prisma.$queryRaw`
       SELECT foto_pub
       FROM publicacion
       WHERE cod_pub = ${parseInt(id)};

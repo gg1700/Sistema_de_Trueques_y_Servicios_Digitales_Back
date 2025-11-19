@@ -171,6 +171,17 @@ export async function update_co2_impact_post(cod_us: string, cod_pub: string) {
         if (!result_pub) {
             return { success: false, message: 'El código de publicación no existe.' };
         }
+        const exists_transaction = await prisma.$queryRaw`
+            SELECT * FROM sp_verificarexistenciausuarioorigenpublicacionentransaccion(
+                ${cod_us}::INTEGER,
+                ${cod_pub}::INTEGER
+            ) AS result_trans
+        `;
+        const [ans3] = exists_transaction as any[];
+        const { result_trans } = ans3;
+        if (!result_trans) {
+            return { success: false, message: 'No existe transaccion alguna con este usuario origen y publicacion.' }
+        }
         await prisma.$queryRaw`
             SELECT FROM sp_recalcularimpactoambiantalpublicacion(
                 ${cod_us}::INTEGER,

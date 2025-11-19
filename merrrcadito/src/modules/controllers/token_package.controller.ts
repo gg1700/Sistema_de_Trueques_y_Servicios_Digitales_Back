@@ -83,3 +83,29 @@ export async function getAllPackages(req: Request, res: Response) {
         });
     }
 }
+
+export async function getPackageImage(req: Request, res: Response) {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).send("ID inválido");
+        }
+
+        const imageBuffer = await TokenPackageService.get_package_image(id);
+
+        if (imageBuffer) {
+            res.setHeader('Content-Type', 'image/jpeg');
+            res.send(imageBuffer);
+        } else {
+            if (fs.existsSync(defaultImagePath)) {
+                res.setHeader('Content-Type', 'image/jpeg');
+                fs.createReadStream(defaultImagePath).pipe(res);
+            } else {
+                res.status(404).send("Imagen no encontrada");
+            }
+        }
+    } catch (error) {
+        console.error("Error sirviendo imagen:", error);
+        res.status(500).send("Error interno");
+    }
+}

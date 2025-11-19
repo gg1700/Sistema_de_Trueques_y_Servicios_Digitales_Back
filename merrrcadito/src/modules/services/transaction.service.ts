@@ -112,7 +112,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                 // Determinar el estado de la transacción según el saldo del usuario origen y el costo del evento
                 if (saldo_actual < costo_inscripcion) {
                     estado_trans = 'no_satisfactorio';
-                }else {
+                } else {
                     estado_trans = 'satisfactorio';
                     // Actualizar el saldo del usuario origen
                     await prisma.$queryRaw`
@@ -130,7 +130,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
             const [ans2] = exists_token as any[];
             const { result_token } = ans2;
             // Verificar si el paquete de tokens existe
-            if(!result_token) {
+            if (!result_token) {
                 throw new Error('El codigo del paquete de token no existe.');
             } else {
                 // Verificar saldo del usuario origen
@@ -150,7 +150,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                 // Determinar el estado de la transacción según el saldo del usuario origen y el costo del evento
                 if (saldo_actual < precio_real) {
                     estado_trans = 'no_satisfactorio';
-                }else {
+                } else {
                     estado_trans = 'satisfactorio';
                     // Actualizar el saldo del usuario origen
                     await prisma.$queryRaw`
@@ -187,3 +187,22 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
     }
 }
 
+export async function get_user_transaction_history(cod_us: string) {
+    try {   
+        const transaction_history : TransactionInfo[] = await prisma.$queryRaw`
+            SELECT * FROM sp_obtenerhistorialtransaccionesusuario(
+                ${cod_us}::INTEGER
+            )
+        `;
+        const filtered_transaction_history : TransactionInfo[] = []
+        for (const transaction of transaction_history) {
+            const filtered_transaction = Object.fromEntries(
+                Object.entries(transaction).filter(([_, v]) => v !== null)
+            ) as TransactionInfo;
+            filtered_transaction_history.push(filtered_transaction);
+        }
+        return filtered_transaction_history;
+    } catch (err) {
+        throw new Error((err as Error).message)
+    }
+}

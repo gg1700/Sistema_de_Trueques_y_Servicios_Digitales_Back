@@ -30,3 +30,34 @@ export async function registerTransaction(req: Request, res: Response) {
         });
     }
 }
+
+export async function getUserTransactionHistory(req: Request, res: Response) {
+    try {
+        const { cod_us } = req.query;
+        if (!cod_us || typeof cod_us !== 'string') {
+            return res.status(400).json({
+                success: false,
+                message: 'Codigo de usuario invalido.'
+            });
+        }
+        const data = await TransactionService.get_user_transaction_history(cod_us);
+        if (!data) {
+            return res.status(404).json({
+                success: false,
+                message: 'No se encontraron datos para el usuario especificado.',
+                data: null
+            });
+        }
+        return res.status(200).json({
+            success: true,
+            message: 'Datos del usuario obtenidos exitosamente.',
+            data: data
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener los datos del historial de transaccion del usuario.',
+            error: (err as Error).message
+        });
+    }
+}

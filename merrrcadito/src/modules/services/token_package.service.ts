@@ -24,7 +24,23 @@ export async function get_all_packages() {
             SELECT * FROM sp_obtenerpacketestoken()
         `;
         return packages_data;
-    } catch(err) {
+    } catch (err) {
         throw new Error((err as Error).message)
+    }
+}
+
+export async function get_package_image(id: number) {
+    try {
+        const result: any[] = await prisma.$queryRaw`
+            SELECT imagen_paquete FROM public.paquete_token WHERE id = ${id}
+        `;
+
+        if (result.length > 0) {
+            return result[0].imagen_paquete;
+        }
+        return null;
+    } catch (err) {
+        console.error("Error obteniendo imagen:", err);
+        return null;
     }
 }

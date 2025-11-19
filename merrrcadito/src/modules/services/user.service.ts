@@ -152,3 +152,15 @@ export async function get_ranking_users_by_sells() {
         throw new Error((err as Error).message);
     }
 }
+
+export async function update_co2_impact (cod_us: string) {
+    try {
+        await prisma.$queryRaw`
+            SELECT FROM sp_recalcularimpactoambiantalpublicacion(
+                ${cod_us}::INTEGER
+            )
+        `;
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}

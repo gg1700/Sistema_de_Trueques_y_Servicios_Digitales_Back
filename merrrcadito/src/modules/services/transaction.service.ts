@@ -25,6 +25,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
         let estado_trans = null;
         let cod_us_destino = null;
         let trans_owner = null;
+        let monto_pagado = 0.0;
         // Verificar si es una publicación o un evento
         if (attributes.cod_pub != null && attributes.cod_evento == null && attributes.id_token == null) {
             // Es una publicación
@@ -66,6 +67,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                 if (saldo_actual < total_cost) {
                     estado_trans = 'no_satisfactorio';
                 } else {
+                    monto_pagado = total_cost;
                     estado_trans = 'satisfactorio';
                     // Actualizar el saldo del usuario origen
                     await prisma.$queryRaw`
@@ -113,6 +115,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                 if (saldo_actual < costo_inscripcion) {
                     estado_trans = 'no_satisfactorio';
                 } else {
+                    monto_pagado = costo_inscripcion;
                     estado_trans = 'satisfactorio';
                     // Actualizar el saldo del usuario origen
                     await prisma.$queryRaw`
@@ -133,6 +136,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
             if (!result_token) {
                 throw new Error('El codigo del paquete de token no existe.');
             } else {
+                attributes.moneda = 'Bs';
                 // Verificar saldo del usuario origen
                 const saldo_us_origen: any[] = await prisma.$queryRaw`
                     SELECT saldo_actual FROM billetera
@@ -151,6 +155,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                 if (saldo_actual < precio_real) {
                     estado_trans = 'no_satisfactorio';
                 } else {
+                    monto_pagado = precio_real;
                     estado_trans = 'satisfactorio';
                     // Actualizar el saldo del usuario origen
                     await prisma.$queryRaw`
@@ -167,7 +172,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
         if (attributes.moneda === null || attributes.moneda === undefined) {
             attributes.moneda = 'CV';
         }
-        await prisma.$queryRaw`
+        const transaction = await prisma.$queryRaw`
             SELECT sp_registrartransaccion(
                 ${attributes.cod_potenciador ?? null}::INTEGER,
                 ${cod_us_origen}::INTEGER,
@@ -179,6 +184,14 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                 ${attributes.monto_regalo ?? null}::DECIMAL,
                 ${estado_trans}::"TransactionState",
                 ${attributes.id_token ?? null}::INTEGER
+            ) AS cod_trans
+        `;
+        const [trans_cod] : any = transaction;
+        const { cod_trans } = trans_cod;
+        await prisma.$queryRaw`
+            SELECT sp_registrarpagoescrow(
+                ${cod_trans}::INTEGER,
+                ${monto_pagado}::DECIMAL
             )
         `;
         return { success: true, message: "Transacción registrada correctamente" };

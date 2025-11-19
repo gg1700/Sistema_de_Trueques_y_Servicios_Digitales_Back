@@ -1,5 +1,5 @@
 import * as dotenv from 'dotenv';
-import connectToDatabase from '../database';
+import connectToDatabase from '../../database';
 import { PrismaClient, Prisma } from '@prisma/client';
 
 dotenv.config();

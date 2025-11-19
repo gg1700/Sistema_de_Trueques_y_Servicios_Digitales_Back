@@ -1,10 +1,8 @@
-import { Router } from 'express';
-import * as OrganizationController from '../controllers/organization.controller';
+import { Router } from "express";
+import * as OrganizationController from '../../modules/controllers/organization.controller';
 
 const router = Router();
 
-router.post('/register', OrganizationController.registerOrganization);
-
-router.get('/get_organization_data', OrganizationController.getOrganizationData);
+router.get('/:id/image', OrganizationController.getOrganizationLogo);
 
 export default router;

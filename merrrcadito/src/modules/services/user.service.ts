@@ -133,3 +133,22 @@ export async function get_ranking_users_by_co2() {
         throw new Error((err as Error).message);
     }
 }
+
+export async function get_ranking_users_by_sells() {
+    try {
+        const ranking_sells : any [] = await prisma.$queryRaw`
+            SELECT * FROM sp_rankingusuariosventas()
+        `;
+        const final_ranking_sells : any[] = [];
+        let i = 0;
+        while (i < Math.min(ranking_sells.length, 10)) {
+            final_ranking_sells.push(
+                ranking_sells[i],
+            );
+            i++;
+        }
+        return final_ranking_sells;
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}

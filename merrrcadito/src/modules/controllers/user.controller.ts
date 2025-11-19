@@ -195,3 +195,15 @@ export async function getRankingUsersByCO2(req: Request, res: Response) {
         });
     }
 }
+
+export async function getRankingUsersBySells(req: Request, res: Response) {
+    try {
+
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener el ranking de vendedores por ventas.',
+            error: (err as Error).message
+        });
+    }
+}

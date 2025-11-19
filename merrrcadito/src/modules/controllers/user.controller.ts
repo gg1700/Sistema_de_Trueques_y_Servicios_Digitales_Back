@@ -199,7 +199,18 @@ export async function getRankingUsersByCO2(req: Request, res: Response) {
 
 export async function getRankingUsersBySells(req: Request, res: Response) {
     try {
-
+        const ranking_users_sells = await UserService.get_ranking_users_by_sells();
+        if (!ranking_users_sells) {
+            return res.status(400).json({
+                success: false,
+                message: 'No se encontro el ranking de '
+            })
+        }
+        return res.status(200).json({
+            success: true,
+            message: 'Ranking de usuarios vendedores por cantidad de ventas obtenido exitosamente.',
+            data: ranking_users_sells
+        });
     } catch (err) {
         return res.status(500).json({
             success: false,
@@ -207,7 +218,7 @@ export async function getRankingUsersBySells(req: Request, res: Response) {
             error: (err as Error).message
         });
     }
-}
+}   
 
 export async function getUserImage(req: Request, res: Response) {
     try {
@@ -228,9 +239,32 @@ export async function getUserImage(req: Request, res: Response) {
         res.set('Cache-Control', 'public, max-age=31536000');
         res.send(usuario.foto_us);
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             error
+        });
+    }
+}
+
+export async function updateCo2Impact (req: Request, res: Response) {
+    try {
+        const { cod_us, cod_pub } = req.query;
+        if (!cod_us || typeof cod_us !== 'string' || !cod_pub || typeof cod_pub !== 'string') {
+            return res.status(400).json({
+                success: false,
+                message: 'Codigo de usuario invalido.'
+            })
+        }
+        const result = await UserService.update_co2_impact_post(cod_us, cod_pub);
+        return res.status(200).json({
+            success: result.success,
+            message: result.message
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al actualizar el nivel de impacto ambiental del usuario.',
+            error: (err as Error).message
         });
     }
 }

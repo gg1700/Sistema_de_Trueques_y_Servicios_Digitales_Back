@@ -17,4 +17,8 @@ router.get('/get_rankin_users_co2', UserController.getRankingUsersByCO2);
 
 router.get('/:id/image', UserController.getUserImage);
 
+router.get('/get_rankin_users_sells', UserController.getRankingUsersBySells);
+
+router.put('/update_co2_impact', UserController.updateCo2Impact);
+
 export default router;

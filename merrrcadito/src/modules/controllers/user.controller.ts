@@ -171,3 +171,27 @@ export async function getUserPosts(req: Request, res: Response) {
         });
     }
 }
+
+export async function getRankingUsersByCO2(req: Request, res: Response) {
+    try {
+        const ranking_users_co2 = await UserService.get_ranking_users_by_co2();
+        if (!ranking_users_co2) {
+            return res.status(404).json({
+                success: false,
+                message: 'No se encontró el ranking de usuarios por CO2.',
+                data: []
+            });
+        }
+        return res.status(200).json({
+            success: true,
+            message: 'Ranking de usuarios por CO2 obtenido exitosamente.',
+            data: ranking_users_co2
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener el ranking de usuarios por CO2: ',
+            error: (error as Error).message
+        });
+    }
+}

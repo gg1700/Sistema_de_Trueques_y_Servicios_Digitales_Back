@@ -3,6 +3,7 @@ import * as UserService from "../services/user.service";
 import { ImageService } from "../services/image.service";
 import * as path from 'path';
 import * as fs from 'fs';
+import { prisma } from "../../database";
 
 const defaultImagePath = path.join(__dirname, '../../images/user_default_image.png');
 const image_buffer = fs.readFileSync(defaultImagePath);
@@ -142,7 +143,7 @@ export async function getUserData(req: Request, res: Response) {
 }
 
 export async function getUserPosts(req: Request, res: Response) {
-    try{
+    try {
         const { cod_us } = req.query;
         if (!cod_us || typeof cod_us !== 'string') {
             return res.status(400).json({
@@ -163,7 +164,7 @@ export async function getUserPosts(req: Request, res: Response) {
             message: 'Publicaciones del usuario obtenidas exitosamente.',
             data: user_posts
         });
-    }catch(err){
+    } catch (err) {
         return res.status(500).json({
             success: false,
             message: 'Error al obtener las publicaciones del usuario: ',
@@ -192,6 +193,32 @@ export async function getRankingUsersByCO2(req: Request, res: Response) {
             success: false,
             message: 'Error al obtener el ranking de usuarios por CO2: ',
             error: (error as Error).message
+        });
+    }
+}
+
+export async function getUserImage(req: Request, res: Response) {
+    try {
+        const { id } = req.params;
+        const result: any = await prisma.$queryRaw`
+            SELECT foto_us
+            FROM usuario
+            WHERE cod_us = ${parseInt(id)}
+        `;
+        const usuario = result[0];
+        if (!usuario || !usuario.foto_us) {
+            return res.status(404).json({
+                success: false,
+                message: 'Foto no encontrada',
+            });
+        }
+        res.set('Content-Type', 'image/jpeg');
+        res.set('Cache-Control', 'public, max-age=31536000');
+        res.send(usuario.foto_us);
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error
         });
     }
 }

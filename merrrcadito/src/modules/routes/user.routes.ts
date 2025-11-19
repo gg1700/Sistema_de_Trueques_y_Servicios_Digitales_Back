@@ -15,4 +15,6 @@ router.get('/get_user_posts', UserController.getUserPosts);
 
 router.get('/get_rankin_users_co2', UserController.getRankingUsersByCO2);
 
+router.get('/:id/image', UserController.getUserImage);
+
 export default router;

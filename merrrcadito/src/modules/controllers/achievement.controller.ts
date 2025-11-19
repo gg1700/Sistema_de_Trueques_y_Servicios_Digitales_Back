@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 export async function getAchievementLogo(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const result: any = prisma.$queryRaw`
+    const result: any = await prisma.$queryRaw`
       SELECT icono_logro
       FROM logro
       WHERE cod_logro = ${parseInt(id)}

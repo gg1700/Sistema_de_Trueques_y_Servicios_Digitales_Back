@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv';
 import connectToDatabase from '../../database';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 dotenv.config();
 
@@ -8,14 +8,14 @@ const prisma = new PrismaClient();
 
 let connected: boolean = false;
 
-async function setDatabaseConnection() {
+export async function setDatabaseConnection() {
     if (!connected) {
         await connectToDatabase();
         connected = true;
     }
 }
 
-async function registrar_promocion(current_promotion: {
+export async function registrar_promocion(current_promotion: {
     titulo_prom: string;
     fecha_ini_prom: Date;
     fecha_fin_prom: Date;
@@ -48,7 +48,3 @@ async function registrar_promocion(current_promotion: {
         throw new Error('Error creating promotion: ' + (err as Error).message);
     }
 }
-
-export {
-    registrar_promocion
-};

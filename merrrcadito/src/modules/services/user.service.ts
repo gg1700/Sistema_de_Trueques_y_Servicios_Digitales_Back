@@ -110,17 +110,17 @@ export async function get_user_posts(cod_us: string) {
             )
         `;
         return user_posts;
-    }catch (err) {
+    } catch (err) {
         throw new Error((err as Error).message);
     }
 }
 
 export async function get_ranking_users_by_co2() {
     try {
-        const ranking_users_co2 : any[] = await prisma.$queryRaw`
+        const ranking_users_co2: any[] = await prisma.$queryRaw`
             SELECT * FROM sp_rankingusuariosporco2()
         `;
-        const final_ranking_users_co2 : any[] = [];
+        const final_ranking_users_co2: any[] = [];
         let i = 0;
         while (i < Math.min(ranking_users_co2.length, 10)) {
             final_ranking_users_co2.push(
@@ -129,6 +129,66 @@ export async function get_ranking_users_by_co2() {
             i++;
         }
         return final_ranking_users_co2;
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}
+
+export async function get_ranking_users_by_sells() {
+    try {
+        const ranking_sells: any[] = await prisma.$queryRaw`
+            SELECT * FROM sp_rankingusuariosventas()
+        `;
+        const final_ranking_sells: any[] = [];
+        let i = 0;
+        while (i < Math.min(ranking_sells.length, 10)) {
+            final_ranking_sells.push(
+                ranking_sells[i],
+            );
+            i++;
+        }
+        return final_ranking_sells;
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}
+
+export async function update_co2_impact_post(cod_us: string, cod_pub: string) {
+    try {
+        const exixts = await prisma.$queryRaw`
+            SELECT * FROM sp_verificarexistenciacodusuario(${cod_us}::INTEGER) AS result
+        `;
+        const [ans] = exixts as any[];
+        const { result } = ans;
+        if (!result) {
+            return { success: false, message: 'El código de usuario no existe.' };
+        }
+        const exists_pub = await prisma.$queryRaw`
+            SELECT * FROM sp_verificarexistenciacodpublicacion(${cod_pub}::INTEGER) AS result_pub
+        `;
+        const [ans2] = exists_pub as any[];
+        const { result_pub } = ans2;
+        if (!result_pub) {
+            return { success: false, message: 'El código de publicación no existe.' };
+        }
+        const exists_transaction = await prisma.$queryRaw`
+            SELECT * FROM sp_verificarexistenciausuarioorigenpublicacionentransaccion(
+                ${cod_us}::INTEGER,
+                ${cod_pub}::INTEGER
+            ) AS result_trans
+        `;
+        const [ans3] = exists_transaction as any[];
+        const { result_trans } = ans3;
+        if (!result_trans) {
+            return { success: false, message: 'No existe transaccion alguna con este usuario origen y publicacion.' }
+        }
+        await prisma.$queryRaw`
+            SELECT FROM sp_recalcularimpactoambiantalpublicacion(
+                ${cod_us}::INTEGER,
+                ${cod_pub}::INTEGER
+            )
+        `;
+        return { success: true, message: 'Nivel de impacto ambiental actualizado.' };
     } catch (err) {
         throw new Error((err as Error).message);
     }

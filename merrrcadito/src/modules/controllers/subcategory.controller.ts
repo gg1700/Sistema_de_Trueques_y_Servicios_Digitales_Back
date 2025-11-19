@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { ImageService } from '../services/image.service';
+import * as SubcategoryServiceModule from '../services/subcategory.service';
 
 const prisma = new PrismaClient();
 

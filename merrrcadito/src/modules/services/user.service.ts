@@ -179,6 +179,7 @@ export async function update_co2_impact_post(cod_us: string, cod_pub: string) {
         `;
         const [ans3] = exists_transaction as any[];
         const { result_trans } = ans3;
+        console.log(result_trans);
         if (!result_trans) {
             return { success: false, message: 'No existe transaccion alguna con este usuario origen y publicacion.' }
         }

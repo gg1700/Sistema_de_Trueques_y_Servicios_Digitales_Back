@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import * as BinnacleService from './binnacle.service';
 
 const prisma = new PrismaClient();
 
@@ -25,7 +26,8 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
         let estado_trans = null;
         let cod_us_destino = null;
         let trans_owner = null;
-        let monto_pagado = 0.0;
+        let monto_pagado = null;
+        let monto_pagado_bs = null;
         // Verificar si es una publicación o un evento
         if (attributes.cod_pub != null && attributes.cod_evento == null && attributes.id_token == null) {
             // Es una publicación
@@ -143,7 +145,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                     WHERE cod_us = ${cod_us_origen}::INTEGER
                 `;
                 const [wallet_origin] = saldo_us_origen;
-                const { saldo_actual } = wallet_origin;
+                const { saldo_real } = wallet_origin;
                 const event_cost: any[] = await prisma.$queryRaw`
                     SELECT precio_real FROM paquete_token
                     WHERE id = ${attributes.id_token}::INTEGER
@@ -152,15 +154,15 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                 const { precio_real } = event;
 
                 // Determinar el estado de la transacción según el saldo del usuario origen y el costo del evento
-                if (saldo_actual < precio_real) {
+                if (saldo_real < precio_real) {
                     estado_trans = 'no_satisfactorio';
                 } else {
-                    monto_pagado = precio_real;
+                    monto_pagado_bs = precio_real;
                     estado_trans = 'satisfactorio';
                     // Actualizar el saldo del usuario origen
                     await prisma.$queryRaw`
                         UPDATE billetera
-                        SET saldo_actual = saldo_actual - ${precio_real}::DECIMAL
+                        SET saldo_real = saldo_real - ${precio_real}::DECIMAL
                         WHERE cod_us = ${cod_us_origen}::INTEGER
                     `;
                 }
@@ -191,9 +193,14 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
         await prisma.$queryRaw`
             SELECT sp_registrarpagoescrow(
                 ${cod_trans}::INTEGER,
-                ${monto_pagado}::DECIMAL
+                ${monto_pagado ?? null}::DECIMAL,
+                ${monto_pagado_bs ?? null}::DECIMAL
             )
         `;
+        const binnacle_result = await BinnacleService.register_transaction_binnacle(cod_trans);
+        if(!binnacle_result.success){
+            return binnacle_result;
+        }
         return { success: true, message: "Transacción registrada correctamente" };
     } catch (err) {
         throw new Error((err as Error).message);

@@ -29,3 +29,34 @@ export async function createWallet (req: Request, res: Response) {
         });   
     }
 }
+
+export async function getWalletDataByUser (req: Request, res: Response) {
+    try {
+        const { cod_us } = req.query;
+        if (!cod_us || typeof cod_us !== 'string') {
+            return res.status(400).json({
+                success: false,
+                message: 'Codigo de usuario asociado invalido.',
+            });
+        }
+        const wallet_data = await WalletService.get_wallet_data_by_user(cod_us);
+        if (!wallet_data) {
+            return res.status(400).json({
+                success: false,
+                message: 'No se encontraron datos de billetera para el usuario solicitado.',
+                data: []
+            });
+        }
+        return res.status(200).json({
+            success: true,
+            message: 'Datos de billetera del usuario correctamente accesados.',
+            data: wallet_data
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener los datos de la billetera del usuario: ',
+            error: (err as Error).message
+        });
+    }
+}

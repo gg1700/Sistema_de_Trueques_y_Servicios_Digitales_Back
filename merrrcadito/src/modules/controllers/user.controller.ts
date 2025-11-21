@@ -256,9 +256,17 @@ export async function updateCo2Impact (req: Request, res: Response) {
             })
         }
         const result = await UserService.update_co2_impact_post(cod_us, cod_pub);
+        if (!result.success) {
+            return res.status(400).json({
+                success: false,
+                message: 'No se pudo actualizar el nivel de impacto ambiental el usuario.',
+                data: result
+            });
+        }
         return res.status(200).json({
-            success: result.success,
-            message: result.message
+            success: true,
+            message: 'El nivel de impacto ambiental del usuario se actualizo correctamente.',
+            data: result
         });
     } catch (err) {
         return res.status(500).json({

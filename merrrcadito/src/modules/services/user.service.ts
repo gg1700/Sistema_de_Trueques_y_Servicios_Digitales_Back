@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 export async function get_users_activity_report_by_week() {
     try {
         const report = await prisma.$queryRaw`
-            SELECT * FROM sp_reporteactividadusuarios() AS active_users
+            SELECT * FROM sp_reporteactividadusuarios() AS active_userst
         `;
         return report;
     } catch (err) {
@@ -192,5 +192,18 @@ export async function update_co2_impact_post(cod_us: string, cod_pub: string) {
         return { success: true, message: 'Nivel de impacto ambiental actualizado.' };
     } catch (err) {
         throw new Error((err as Error).message);
+    }
+}
+
+export async function get_users_actions_by_month(month: string) {
+    try {
+        const report = prisma.$queryRaw`
+            SELECT * FROM sp_reporteaccionesusuariospormes(
+                ${month}::INTEGER
+            )
+        `;
+        return report;
+    } catch (err) {
+        throw new Error((err as Error).message)
     }
 }

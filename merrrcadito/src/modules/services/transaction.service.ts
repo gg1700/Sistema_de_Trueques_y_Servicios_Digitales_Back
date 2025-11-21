@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import * as BinnacleService from './binnacle.service';
 
 const prisma = new PrismaClient();
 
@@ -196,6 +197,10 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                 ${monto_pagado_bs ?? null}::DECIMAL
             )
         `;
+        const binnacle_result = await BinnacleService.register_transaction_binnacle(cod_trans);
+        if(!binnacle_result.success){
+            return binnacle_result;
+        }
         return { success: true, message: "Transacción registrada correctamente" };
     } catch (err) {
         throw new Error((err as Error).message);

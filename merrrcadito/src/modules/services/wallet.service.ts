@@ -24,3 +24,24 @@ export async function create_wallet(cod_us: string, cuenta_bancaria: string, sal
         throw new Error((err as Error).message);
     }
 }
+
+export async function get_wallet_data_by_user(cod_us: string) {
+    try {
+        const exixts = await prisma.$queryRaw`
+            SELECT * FROM sp_verificarexistenciacodusuario(${cod_us}::INTEGER) AS result
+        `;
+        const [ans] = exixts as any[];
+        const { result } = ans;
+        if (!result) {
+            throw new Error('El codigo del usuario solicitado no existe.');
+        }
+        const wallet_data = await prisma.$queryRaw`
+            SELECT * FROM sp_obtenerdatosbilleterausuario(
+                ${cod_us}::INTEGER
+            )
+        `;
+        return wallet_data;
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}

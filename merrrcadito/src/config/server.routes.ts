@@ -14,6 +14,7 @@ import TransactionRoutes from '../modules/routes/transaction.routes';
 import TokenPackageRoutes from '../modules/routes/token_package.routes';
 import AchievementRoutes from '../modules/routes/achievment.routes';
 import PublicationRoutes from '../modules/routes/publication.routes';
+import EventRoutes from '../modules/routes/event.routes';
 
 const router = Router();
 
@@ -31,9 +32,9 @@ router.use('/api/organization', OrganizationRoutes);
 router.use('/api/token_package', TokenPackageRoutes);
 router.use('/api/achievments', AchievementRoutes);
 router.use('/api/publications', PublicationRoutes);
+router.use('/api/events', EventRoutes);
 
 router.use('/', HealthCheck);
-
 
 router.use((req, res) => {
   console.log('Not found:', req.method, req.originalUrl);

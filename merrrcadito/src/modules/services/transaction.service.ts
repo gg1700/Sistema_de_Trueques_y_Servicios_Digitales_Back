@@ -139,38 +139,93 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                 throw new Error('El codigo del paquete de token no existe.');
             } else {
                 attributes.moneda = 'Bs';
-                // Verificar saldo del usuario origen
+                // Verificar saldo real del usuario (dinero)
                 const saldo_us_origen: any[] = await prisma.$queryRaw`
-                    SELECT saldo_actual FROM billetera
+                    SELECT saldo_real FROM billetera
                     WHERE cod_us = ${cod_us_origen}::INTEGER
                 `;
+
+                if (!saldo_us_origen || saldo_us_origen.length === 0) {
+                    throw new Error('No se encontró la billetera del usuario.');
+                }
+
                 const [wallet_origin] = saldo_us_origen;
-                const { saldo_real } = wallet_origin;
-                const event_cost: any[] = await prisma.$queryRaw`
-                    SELECT precio_real FROM paquete_token
+                let { saldo_real } = wallet_origin;
+
+                if (saldo_real === null || saldo_real === undefined) {
+                    throw new Error('El saldo real del usuario no está definido.');
+                }
+
+                // Obtener precio y tokens del paquete
+                const token_package: any[] = await prisma.$queryRaw`
+                    SELECT precio_real, tokens FROM paquete_token
                     WHERE id = ${attributes.id_token}::INTEGER
                 `;
-                const [event] = event_cost;
-                const { precio_real } = event;
 
-                // Determinar el estado de la transacción según el saldo del usuario origen y el costo del evento
-                if (saldo_real < precio_real) {
+                if (!token_package || token_package.length === 0) {
+                    throw new Error('No se encontraron los datos del paquete de tokens.');
+                }
+
+                const [package_data] = token_package;
+                let { precio_real, tokens } = package_data;
+
+                if (precio_real === null || precio_real === undefined) {
+                    throw new Error('El precio del paquete no está definido.');
+                }
+
+                if (tokens === null || tokens === undefined) {
+                    throw new Error('La cantidad de tokens del paquete no está definida.');
+                }
+
+                // Función helper para convertir a número
+                const toNumber = (val: any): number => {
+                    if (typeof val === 'number') return val;
+                    if (typeof val === 'string') return parseFloat(val);
+                    if (val && typeof val === 'object') {
+                        // Si es un objeto Decimal de Prisma/Postgres
+                        if (typeof val.toNumber === 'function') return val.toNumber();
+                        if (val.toString) return parseFloat(val.toString());
+                        // Intento final: convertir a string JSON y parsear si es necesario, o usar valueOf
+                        return Number(val);
+                    }
+                    return 0;
+                };
+
+                // Convertir a números
+                const saldo_real_num = toNumber(saldo_real);
+                const precio_real_num = toNumber(precio_real);
+                const tokens_num = toNumber(tokens);
+
+                console.log(`[DEBUG] Usuario ${cod_us_origen}: saldo=${saldo_real_num} (orig:${typeof saldo_real}), precio=${precio_real_num} (orig:${typeof precio_real})`);
+
+                // Determinar el estado de la transacción según el saldo real y el precio
+                if (saldo_real_num < precio_real_num) {
                     estado_trans = 'no_satisfactorio';
+                    console.log(`[DEBUG] Saldo insuficiente. Estado: ${estado_trans}`);
                 } else {
-                    monto_pagado_bs = precio_real;
+                    monto_pagado_bs = precio_real_num;
                     estado_trans = 'satisfactorio';
-                    // Actualizar el saldo del usuario origen
+                    console.log(`[DEBUG] Saldo suficiente. Actualizando billetera...`);
+                    // Actualizar saldo real (descontar dinero) y saldo actual (agregar tokens)
                     await prisma.$queryRaw`
                         UPDATE billetera
-                        SET saldo_real = saldo_real - ${precio_real}::DECIMAL
+                        SET saldo_real = saldo_real - ${precio_real_num}::DECIMAL,
+                            saldo_actual = saldo_actual + ${tokens_num}::DECIMAL
                         WHERE cod_us = ${cod_us_origen}::INTEGER
                     `;
+                    console.log(`[DEBUG] Billetera actualizada exitosamente`);
                 }
             }
         } else {
             // Ni publicación ni evento proporcionado correctamente
             throw new Error('Debe proporcionar un código de publicación o un código de evento válido.');
         }
+
+        // Validar que la transacción sea satisfactoria antes de registrarla
+        if (estado_trans === 'no_satisfactorio') {
+            throw new Error('Saldo insuficiente para completar la transacción.');
+        }
+
         if (attributes.moneda === null || attributes.moneda === undefined) {
             attributes.moneda = 'CV';
         }
@@ -188,7 +243,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                 ${attributes.id_token ?? null}::INTEGER
             ) AS cod_trans
         `;
-        const [trans_cod] : any = transaction;
+        const [trans_cod]: any = transaction;
         const { cod_trans } = trans_cod;
         await prisma.$queryRaw`
             SELECT sp_registrarpagoescrow(
@@ -198,7 +253,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
             )
         `;
         const binnacle_result = await BinnacleService.register_transaction_binnacle(cod_trans);
-        if(!binnacle_result.success){
+        if (!binnacle_result.success) {
             return binnacle_result;
         }
         return { success: true, message: "Transacción registrada correctamente" };
@@ -208,13 +263,13 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
 }
 
 export async function get_user_transaction_history(cod_us: string) {
-    try {   
-        const transaction_history : TransactionInfo[] = await prisma.$queryRaw`
+    try {
+        const transaction_history: TransactionInfo[] = await prisma.$queryRaw`
             SELECT * FROM sp_obtenerhistorialtransaccionesusuario(
                 ${cod_us}::INTEGER
             )
         `;
-        const filtered_transaction_history : TransactionInfo[] = []
+        const filtered_transaction_history: TransactionInfo[] = []
         for (const transaction of transaction_history) {
             const filtered_transaction = Object.fromEntries(
                 Object.entries(transaction).filter(([_, v]) => v !== null)

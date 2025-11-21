@@ -276,3 +276,34 @@ export async function updateCo2Impact (req: Request, res: Response) {
         });
     }
 }
+
+export async function getUsersActionsByMonth (req: Request, res: Response) {
+    try {
+        const { month } = req.query;
+        if (!month || typeof month !== 'string') {
+            return res.status(400).json({
+                success: false,
+                message: 'Mes invalido',
+            });
+        }
+        const month_report = await UserService.get_users_actions_by_month(month);
+        if (!month_report) {
+            return res.status(400).json({
+                success: false,
+                message: 'No se encontró el reporte de actividad de usuarios por semana.',
+                data: []
+            });
+        }
+        return res.status(200).json({
+            success: true,
+            message: 'Reporte de actividad de usuarios por semana obtenido exitosamente.',
+            data: month_report
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener el reporte de actividad de usuarios por mes: ',
+            error: (err as Error).message
+        });
+    }
+}

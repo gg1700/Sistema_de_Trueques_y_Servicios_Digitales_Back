@@ -61,3 +61,34 @@ export async function getUserTransactionHistory(req: Request, res: Response) {
         });
     }
 }
+
+export async function getCompleteTransactionHistoryByMonth (req: Request, res: Response) {
+    try {
+        const { month } = req.query;
+        if (!month || typeof month !== 'string') {
+            return res.status(400).json({
+                success: false,
+                message: 'Mes invalido.'
+            });
+        }
+        const data = await TransactionService.get_complete_transaction_history_by_month(month);
+        if (!data) {
+            return res.status(400).json({
+                success: false,
+                message: 'No se encontraron transacciones para el mes especificado.',
+                data: []
+            });
+        }
+        return res.status(200).json({
+            success: true,
+            message: 'Datos de transacciones en el mes obtenidas correctamente.',
+            data: data
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener los datos del historial de transacciones del mes.',
+            error: (err as Error).message
+        });
+    }
+}

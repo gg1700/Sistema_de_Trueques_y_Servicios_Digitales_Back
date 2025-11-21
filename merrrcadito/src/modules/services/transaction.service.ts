@@ -226,3 +226,23 @@ export async function get_user_transaction_history(cod_us: string) {
         throw new Error((err as Error).message)
     }
 }
+
+export async function get_complete_transaction_history_by_month (month: string) {
+    try {
+        const transaction_history : TransactionInfo[] = await prisma.$queryRaw`
+            SELECT * FROM sp_obtenerhistorialtransaccionescompletomes(
+                ${month}::INTEGER
+            )
+        `;
+        const filtered_transaction_history : TransactionInfo[] = []
+        for (const transaction of transaction_history) {
+            const filtered_transaction = Object.fromEntries(
+                Object.entries(transaction).filter(([_, v]) => v !== null)
+            ) as TransactionInfo;
+            filtered_transaction_history.push(filtered_transaction);
+        }
+        return filtered_transaction_history;
+    } catch (err) {
+        throw new Error((err as Error).message)
+    }
+}

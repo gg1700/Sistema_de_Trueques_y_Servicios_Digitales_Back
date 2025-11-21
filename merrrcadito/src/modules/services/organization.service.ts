@@ -17,7 +17,7 @@ interface OrgInfo {
 export async function register_organization(current_org: Partial<OrgInfo>, logo_org: Buffer) {
     try {
         const nom_leg_org = current_org.nom_leg_org;
-        const exists = await prisma.$queryRaw`
+        const exists = await prisma.$queryRaw`      
             SELECT * FROM sp_verificarexistenciaorg(${nom_leg_org}::VARCHAR) AS result
         `;
         const [ans] = exists as any[];

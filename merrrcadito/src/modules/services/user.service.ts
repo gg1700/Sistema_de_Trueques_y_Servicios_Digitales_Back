@@ -207,3 +207,121 @@ export async function get_users_actions_by_month(month: string) {
         throw new Error((err as Error).message)
     }
 }
+
+// Helper function to convert BigInt to Number
+function convertBigIntToNumber(obj: any): any {
+    if (obj === null || obj === undefined) return obj;
+    if (typeof obj === 'bigint') return Number(obj);
+    if (Array.isArray(obj)) return obj.map(convertBigIntToNumber);
+    if (typeof obj === 'object') {
+        const converted: any = {};
+        for (const key in obj) {
+            converted[key] = convertBigIntToNumber(obj[key]);
+        }
+        return converted;
+    }
+    return obj;
+}
+
+// REPORTE: Productos y Servicios Más Vendidos
+export async function get_top_products_services_report(mes: string, anio: string, limite: string = '10') {
+    try {
+        const report = await prisma.$queryRaw`
+            SELECT * FROM sp_reporteTopProductosServicios(
+                ${mes}::INTEGER,
+                ${anio}::INTEGER,
+                ${limite}::INTEGER
+            )
+        `;
+        return convertBigIntToNumber(report);
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}
+
+// REPORTE: Impacto Ambiental Comparativo
+export async function get_environmental_impact_report(mes: string, anio: string) {
+    try {
+        const report = await prisma.$queryRaw`
+            SELECT * FROM sp_reporteImpactoAmbientalComparativo(
+                ${mes}::INTEGER,
+                ${anio}::INTEGER
+            )
+        `;
+        return convertBigIntToNumber(report);
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}
+
+// REPORTE: Comportamiento de Usuarios
+export async function get_user_behavior_report(mes: string, anio: string) {
+    try {
+        const report = await prisma.$queryRaw`
+            SELECT * FROM sp_reporteComportamientoUsuarios(
+                ${mes}::INTEGER,
+                ${anio}::INTEGER
+            )
+        `;
+        return convertBigIntToNumber(report);
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}
+
+// REPORTE: Intercambios vs Compras
+export async function get_exchanges_vs_purchases_report(mes: string, anio: string) {
+    try {
+        const report = await prisma.$queryRaw`
+            SELECT * FROM sp_reporteIntercambiosVsCompras(
+                ${mes}::INTEGER,
+                ${anio}::INTEGER
+            )
+        `;
+        return convertBigIntToNumber(report);
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}
+
+// REPORTE: Logros y Gamificación
+export async function get_achievements_gamification_report() {
+    try {
+        const report = await prisma.$queryRaw`
+            SELECT * FROM sp_reporteLogrosGamificacion()
+        `;
+        return convertBigIntToNumber(report);
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}
+
+// REPORTE: Calificaciones y Satisfacción
+export async function get_ratings_satisfaction_report(mes: string, anio: string) {
+    try {
+        const report = await prisma.$queryRaw`
+            SELECT * FROM sp_reporteCalificacionesSatisfaccion(
+                ${mes}::INTEGER,
+                ${anio}::INTEGER
+            )
+        `;
+        return convertBigIntToNumber(report);
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}
+
+// REPORTE: Potenciadores y Monetización
+export async function get_boosters_monetization_report(mes: string, anio: string) {
+    try {
+        const report = await prisma.$queryRaw`
+            SELECT * FROM sp_reportePotenciadoresMonetizacion(
+                ${mes}::INTEGER,
+                ${anio}::INTEGER
+            )
+        `;
+        return convertBigIntToNumber(report);
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}

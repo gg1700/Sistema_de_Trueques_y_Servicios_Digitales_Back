@@ -54,7 +54,7 @@ interface AccessInfo {
 export async function get_complete_access_history_by_month (month: string) {
     try {
         const access_history : AccessInfo[] = await prisma.$queryRaw`
-            SELECT * FROM sp_obtenerhistorialtransaccionescompletomes(
+            SELECT * FROM sp_obtenerhistorialaccesoscompletomes(
                 ${month}::INTEGER
             )
         `;

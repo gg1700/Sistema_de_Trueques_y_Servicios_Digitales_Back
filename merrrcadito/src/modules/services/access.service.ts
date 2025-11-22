@@ -43,3 +43,30 @@ export async function register_logout(cod_us: string) {
         throw new Error((err as Error).message);
     }
 }
+
+interface AccessInfo {
+    cod_us: string,
+    estado_acc: 'exitoso' | 'no_exitoso' | 'logout',
+    fecha_acc: Date,
+    contra_acc: string
+}
+
+export async function get_complete_access_history_by_month (month: string) {
+    try {
+        const access_history : AccessInfo[] = await prisma.$queryRaw`
+            SELECT * FROM sp_obtenerhistorialaccesoscompletomes(
+                ${month}::INTEGER
+            )
+        `;
+        const filtered_access_history : AccessInfo[] = []
+        for (const access of access_history) {
+            const filtered_transaction = Object.fromEntries(
+                Object.entries(access).filter(([_, v]) => v !== null)
+            ) as AccessInfo;
+            filtered_access_history.push(filtered_transaction);
+        }
+        return filtered_access_history;
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}

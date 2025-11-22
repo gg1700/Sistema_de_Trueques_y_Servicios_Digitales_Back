@@ -150,7 +150,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                 }
 
                 const [wallet_origin] = saldo_us_origen;
-                let { saldo_real } = wallet_origin;
+                const { saldo_real } = wallet_origin;
 
                 if (saldo_real === null || saldo_real === undefined) {
                     throw new Error('El saldo real del usuario no está definido.');
@@ -167,7 +167,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                 }
 
                 const [package_data] = token_package;
-                let { precio_real, tokens } = package_data;
+                const { precio_real, tokens } = package_data;
 
                 if (precio_real === null || precio_real === undefined) {
                     throw new Error('El precio del paquete no está definido.');

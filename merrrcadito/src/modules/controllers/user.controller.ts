@@ -60,6 +60,7 @@ export async function getUsersActivityReportByMonth(req: Request, res: Response)
 export async function registerUser(req: Request, res: Response) {
     try {
         const attributes = req.body;
+        console.log(attributes);
         let valid_image = null;
         if (!req.file) {
             valid_image = await ImageService.processImage(Buffer.from(hexa_string, 'hex'));

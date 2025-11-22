@@ -1,5 +1,9 @@
 import { Router } from 'express';
+import multer  from 'multer';
 import * as UserController from '../controllers/user.controller';
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 const router = Router();
 
@@ -7,7 +11,7 @@ router.get('/activity_report_by_week', UserController.getUsersActivityReportByWe
 
 router.get('/activity_report_by_month', UserController.getUsersActivityReportByMonth);
 
-router.post('/register', UserController.registerUser);
+router.post('/register', upload.single('foto_us'), UserController.registerUser);
 
 router.get('/get_user_data', UserController.getUserData);
 

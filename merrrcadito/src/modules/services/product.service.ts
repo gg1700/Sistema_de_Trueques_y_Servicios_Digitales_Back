@@ -13,11 +13,11 @@ interface ProductInfo {
 }
 
 export async function register_product(cod_subcat_prod: string, attributes: Partial<ProductInfo>) {
-    try{
-        if(attributes.estado_prod !== null || attributes.estado_prod !== undefined){
+    try {
+        if (attributes.estado_prod !== null || attributes.estado_prod !== undefined) {
             attributes.estado_prod = 'disponible';
         }
-        if(attributes.calidad_prod !== null || attributes.calidad_prod !== undefined){
+        if (attributes.calidad_prod !== null || attributes.calidad_prod !== undefined) {
             attributes.calidad_prod = 'nuevo';
         }
         const prod = await prisma.$queryRaw`
@@ -33,9 +33,10 @@ export async function register_product(cod_subcat_prod: string, attributes: Part
             ) AS cod_prod
         `;
         const [ans] = prod as any[];
-        const { cod_prod } = ans;
+        console.log("Respuesta DB registrar producto:", ans);
+        const cod_prod = ans.cod_prod || ans.sp_registrarproducto;
         return { success: true, message: "Producto registrado correctamente", cod_prod: cod_prod };
-    }catch(err){
+    } catch (err) {
         throw new Error((err as Error).message);
     }
 }

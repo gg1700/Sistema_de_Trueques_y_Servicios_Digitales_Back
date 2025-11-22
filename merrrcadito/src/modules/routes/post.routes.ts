@@ -1,14 +1,17 @@
-import { Router } from 'express';
-import * as PostController from '../controllers/post.controller';
-import multer from 'multer';
+import { Router } from "express";
+import * as PostController from "../controllers/post.controller";
+import multer from "multer";
 
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 const router = Router();
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
 
-router.post('/create', upload.single('foto_pub'), PostController.createPost);
+router.post("/create", upload.single("image"), PostController.createPost);
 
-router.get('/all_active_product_posts', PostController.getAllActiveProductPosts);
+router.get(
+  "/all_active_product_posts",
+  PostController.getAllActiveProductPosts
+);
 
 export default router;

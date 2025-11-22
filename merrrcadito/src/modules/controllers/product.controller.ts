@@ -21,7 +21,7 @@ export async function registerProduct(req: Request, res: Response) {
         return res.status(201).json({
             success: true, 
             message: 'Producto registrado correctamente.', 
-            data: result 
+            data: result.cod_prod,
         });
     } catch (err) {
         return res.status(500).json({

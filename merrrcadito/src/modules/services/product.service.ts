@@ -20,7 +20,7 @@ export async function register_product(cod_subcat_prod: string, attributes: Part
         if(attributes.calidad_prod !== null || attributes.calidad_prod !== undefined){
             attributes.calidad_prod = 'nuevo';
         }
-        await prisma.$queryRaw`
+        const prod = await prisma.$queryRaw`
             SELECT sp_registrarproducto(
                 ${cod_subcat_prod}::INTEGER,
                 ${attributes.nom_prod}::VARCHAR,
@@ -30,9 +30,11 @@ export async function register_product(cod_subcat_prod: string, attributes: Part
                 ${attributes.precio_prod}::DECIMAL,
                 ${attributes.marca_prod ?? null}::VARCHAR,
                 ${attributes.desc_prod ?? null}::VARCHAR
-            )
+            ) AS cod_prod
         `;
-        return { success: true, message: "Producto registrado correctamente" };
+        const [ans] = prod as any[];
+        const { cod_prod } = ans;
+        return { success: true, message: "Producto registrado correctamente", cod_prod: cod_prod };
     }catch(err){
         throw new Error((err as Error).message);
     }

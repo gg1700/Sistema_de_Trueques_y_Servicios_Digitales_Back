@@ -83,10 +83,25 @@ export async function register_user(current_user: Partial<UserInfo>, foto_us: Bu
 
 export async function get_user_data(handle_name: string) {
     try {
+        // Usar consulta directa por ahora en lugar de SP
         const user_data = await prisma.$queryRaw`
-            SELECT * FROM sp_obtenerdatousuarios(
-                ${handle_name}::VARCHAR
-            )
+            SELECT 
+                u.cod_us,
+                u.cod_rol,
+                u.handle_name,
+                u.nom_us,
+                u.ap_pat_us,
+                u.ap_mat_us,
+                u.correo_us,
+                u.telefono_us,
+                u.ci AS ci_us,
+                u.fecha_nacimiento AS fecha_nac_us,
+                u.sexo::TEXT AS genero_us,
+                u.estado_us::TEXT AS estado_us,
+                du.fecha_registro
+            FROM usuario u
+            LEFT JOIN detalle_usuario du ON u.cod_us = du.cod_us
+            WHERE u.handle_name = ${handle_name}
         `;
         return user_data;
     } catch (err) {

@@ -36,10 +36,21 @@ export async function get_wallet_data_by_user(cod_us: string) {
             throw new Error('El codigo del usuario solicitado no existe.');
         }
         const wallet_data = await prisma.$queryRaw`
-            SELECT * FROM sp_obtenerdatosbilleterausuario(
-                ${cod_us}::INTEGER
-            )
+            SELECT 
+                b.cod_bill as cod_billetera,
+                b.cod_us,
+                b.cuenta_bancaria,
+                b.saldo_real,
+                b.saldo_actual as saldo_creditos,
+                (
+                    SELECT MAX(t.fecha_trans) 
+                    FROM transaccion t 
+                    WHERE t.cod_us_origen = ${cod_us}::INTEGER OR t.cod_us_destino = ${cod_us}::INTEGER
+                ) as fecha_ultima_trans
+            FROM billetera b
+            WHERE b.cod_us = ${cod_us}::INTEGER
         `;
+
         return wallet_data;
     } catch (err) {
         throw new Error((err as Error).message);

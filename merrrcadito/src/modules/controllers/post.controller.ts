@@ -56,9 +56,9 @@ export async function createPost(req: Request, res: Response) {
 }
 
 export async function getAllActiveProductPosts(req: Request, res: Response) {
-    try{
+    try {
         const active_product_posts = await PostService.get_all_active_product_posts();
-        if(!active_product_posts){
+        if (!active_product_posts) {
             return res.status(404).json({
                 success: false,
                 message: 'No se encontraron publicaciones activas de productos.',
@@ -70,11 +70,43 @@ export async function getAllActiveProductPosts(req: Request, res: Response) {
             message: 'Publicaciones activas del producto obtenidas correctamente.',
             data: active_product_posts
         });
-    }catch(err){
+    } catch (err) {
         return res.status(500).json({
             success: false,
             message: 'Error al obtener las publicaciones activas del producto: ',
             error: (err as Error).message
+        });
+    }
+}
+
+export async function getPostById(req: Request, res: Response) {
+    try {
+        const { cod_pub } = req.params;
+
+        if (!cod_pub) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de publicación requerido'
+            });
+        }
+
+        const post = await PostService.get_post_by_id(cod_pub);
+
+        if (!post) {
+            return res.status(404).json({
+                success: false,
+                message: 'Publicación no encontrada'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: post
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: (err as Error).message
         });
     }
 }

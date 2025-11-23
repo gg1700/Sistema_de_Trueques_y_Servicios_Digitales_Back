@@ -1,0 +1,51 @@
+import { Request, Response } from "express";
+import * as PostService from "../services/post.service";
+
+export async function createPost(req: Request, res: Response) {
+    try {
+        // ... existing code
+    } catch (err) {
+        // ... existing code
+    }
+}
+
+export async function getAllActiveProductPosts(req: Request, res: Response) {
+    try {
+        // ... existing code
+    } catch (err) {
+        // ... existing code
+    }
+}
+
+// Nuevo endpoint para obtener publicación por ID
+export async function getPostById(req: Request, res: Response) {
+    try {
+        const { cod_pub } = req.params;
+        
+        if (!cod_pub) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de publicación requerido'
+            });
+        }
+
+        const post = await PostService.get_post_by_id(cod_pub);
+        
+        if (!post) {
+            return res.status(404).json({
+                success: false,
+                message: 'Publicación no encontrada'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: post
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: (err as Error).message
+        });
+    }
+}

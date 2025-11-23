@@ -10,4 +10,6 @@ router.post('/create', upload.single('foto_pub'), PostController.createPost);
 
 router.get('/all_active_product_posts', PostController.getAllActiveProductPosts);
 
+router.get('/:cod_pub', PostController.getPostById);
+
 export default router;

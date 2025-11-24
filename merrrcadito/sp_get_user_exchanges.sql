@@ -24,7 +24,6 @@ BEGIN
     SELECT 
         i.cod_inter,
         ip.fecha_inter,
-        -- Mostrar el otro usuario (no el que está viendo el historial)
         CASE 
             WHEN i.cod_us_1 = p_cod_us THEN i.cod_us_2
             ELSE i.cod_us_1

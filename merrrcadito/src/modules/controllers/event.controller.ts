@@ -98,8 +98,9 @@ export async function createEvent(req: Request, res: Response) {
             fecha_inicio_evento,
             fecha_finalizacion_evento,
             tipo_evento,
-            banner_evento,
-            costo_inscripcion: costo_inscripcion ? parseFloat(costo_inscripcion) : 0.0
+            banner_evento: banner_evento || null,
+            costo_inscripcion: parseFloat(costo_inscripcion) || 0.0,
+            cod_rec: req.body.cod_rec ? parseInt(req.body.cod_rec) : null
         });
 
         return res.status(201).json({
@@ -144,6 +145,24 @@ export async function getEventImage(req: Request, res: Response) {
         return res.status(500).json({
             success: false,
             message: 'Error al obtener la imagen del evento',
+            error: (err as Error).message
+        });
+    }
+}
+
+// Obtener todas las recompensas disponibles
+export async function getAllRewards(req: Request, res: Response) {
+    try {
+        const rewards = await EventService.get_all_rewards();
+
+        return res.status(200).json({
+            success: true,
+            data: rewards
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener las recompensas',
             error: (err as Error).message
         });
     }

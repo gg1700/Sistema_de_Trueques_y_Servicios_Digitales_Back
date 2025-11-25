@@ -47,6 +47,7 @@ export async function create_event(eventData: {
     tipo_evento: string;
     banner_evento?: Buffer | null;
     costo_inscripcion?: number;
+    cod_rec?: number | null;
 }) {
     try {
         const {
@@ -57,19 +58,21 @@ export async function create_event(eventData: {
             fecha_finalizacion_evento,
             tipo_evento,
             banner_evento = null,
-            costo_inscripcion = 0.0
+            costo_inscripcion = 0.0,
+            cod_rec = null
         } = eventData;
 
         const result = await prisma.$queryRaw`
             SELECT sp_registrarEvento(
                 ${cod_us}::INTEGER,
                 ${titulo_evento}::VARCHAR,
-                ${descripcion_evento}::VARCHAR,
+                ${descripcion_evento}::TEXT,
                 ${fecha_inicio_evento}::DATE,
                 ${fecha_finalizacion_evento}::DATE,
                 ${tipo_evento}::VARCHAR,
                 ${banner_evento}::BYTEA,
-                ${costo_inscripcion}::NUMERIC
+                ${costo_inscripcion}::NUMERIC,
+                ${cod_rec}::INTEGER
             ) AS cod_evento
         `;
 
@@ -132,6 +135,18 @@ export async function get_events_organization_report(mes: string, anio: string) 
             )
         `;
         return convertBigIntToNumber(report);
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}
+
+// Obtener todas las recompensas disponibles
+export async function get_all_rewards() {
+    try {
+        const rewards = await prisma.$queryRaw`
+            SELECT * FROM sp_obtenerTodasRecompensas()
+        `;
+        return convertBigIntToNumber(rewards);
     } catch (err) {
         throw new Error((err as Error).message);
     }

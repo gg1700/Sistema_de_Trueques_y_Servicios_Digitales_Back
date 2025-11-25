@@ -31,7 +31,7 @@ interface CategoryInfo {
 }
 
 export async function updateCategory(cod_cat: number, attributes: Partial<CategoryInfo>) {
-  try{
+  try {
     const { nom_cat, descr_cat, imagen_repr, tipo_cat } = attributes;
     const category_updated = await prisma.$queryRaw`
       SELECT * FROM sp_actualizarcategoria(
@@ -43,34 +43,40 @@ export async function updateCategory(cod_cat: number, attributes: Partial<Catego
       )
     `;
     return category_updated;
-  }catch(err){
+  } catch (err) {
     throw new Error((err as Error).message);
-  } 
+  }
 }
 
-export async function get_all_categories(){
-  try{
+export async function get_all_categories() {
+  try {
     const all_categories = await prisma.$queryRaw`
       SELECT * FROM sp_get_categories()
     `;
     return all_categories;
-  }catch(err){
+  } catch (err) {
     throw new Error((err as Error).message);
   }
 }
 
 export async function get_category_product_report_by_month(month: string) {
-  try{
-    const current_date = new Date(Date.now());
-    const current_year = current_date.getFullYear();
-    const date = `${current_year}-${month}-01`;
-    const category_report = await prisma.$queryRaw`
-      SELECT * FROM sp_reportecategoriaproductosmes(
-        ${date}::TIMESTAMP
-      )
-    `;
-    return category_report;
-  }catch(err){
-    throw new Error((err as Error).message);
-  }
+  const current_date = new Date(Date.now());
+  const current_year = current_date.getFullYear();
+  const date = `${current_year}-${month}-01`;
+  const category_report = await prisma.$queryRaw`
+    SELECT * FROM sp_reportecategoriaproductosmes(
+      ${date}::TIMESTAMP
+    )
+  ` as any[];
+
+  // Convertir BigInt a Number para evitar error de serialización
+  const serializedReport = category_report.map(row => {
+    const serializedRow: any = {};
+    for (const key in row) {
+      serializedRow[key] = typeof row[key] === 'bigint' ? Number(row[key]) : row[key];
+    }
+    return serializedRow;
+  });
+
+  return serializedReport;
 }

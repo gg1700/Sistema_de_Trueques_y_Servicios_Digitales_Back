@@ -1282,3 +1282,554 @@ BEGIN
     ORDER BY c.cod_cat DESC; -- Igual que en tu controller original
 END;
 $$;
+-- =========================================
+-- NUEVOS REPORTES ADMINISTRATIVOS
+-- =========================================
+
+-- =========================================
+-- REPORTE 1: FLUJO DE BILLETERAS
+-- =========================================
+-- Descripción:
+-- Este reporte muestra la salud financiera del ecosistema
+-- Refleja: Liquidez, distribución de riqueza, actividad económica
+-- Utilidad: Detectar problemas financieros, fraudes, desequilibrios
+
+CREATE OR REPLACE FUNCTION sp_reporteFlujoBilleteras()
+RETURNS TABLE (
+    total_tokens_circulacion DECIMAL(12,2),
+    total_dinero_real DECIMAL(12,2),
+    promedio_saldo_tokens DECIMAL(12,2),
+    promedio_saldo_real DECIMAL(12,2),
+    usuarios_con_saldo_cero BIGINT,
+    usuarios_activos_financieramente BIGINT,
+    rango_0_100 BIGINT,
+    rango_100_500 BIGINT,
+    rango_500_1000 BIGINT,
+    rango_1000_plus BIGINT,
+    total_usuarios BIGINT
+) LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        COALESCE(SUM(b.saldo_actual), 0)::DECIMAL(12,2) AS total_tokens_circulacion,
+        COALESCE(SUM(b.saldo_real), 0)::DECIMAL(12,2) AS total_dinero_real,
+        COALESCE(AVG(b.saldo_actual), 0)::DECIMAL(12,2) AS promedio_saldo_tokens,
+        COALESCE(AVG(b.saldo_real), 0)::DECIMAL(12,2) AS promedio_saldo_real,
+        COUNT(*) FILTER (WHERE b.saldo_actual = 0) AS usuarios_con_saldo_cero,
+        COUNT(*) FILTER (WHERE b.saldo_actual > 0) AS usuarios_activos_financieramente,
+        COUNT(*) FILTER (WHERE b.saldo_actual >= 0 AND b.saldo_actual < 100) AS rango_0_100,
+        COUNT(*) FILTER (WHERE b.saldo_actual >= 100 AND b.saldo_actual < 500) AS rango_100_500,
+        COUNT(*) FILTER (WHERE b.saldo_actual >= 500 AND b.saldo_actual < 1000) AS rango_500_1000,
+        COUNT(*) FILTER (WHERE b.saldo_actual >= 1000) AS rango_1000_plus,
+        COUNT(*)::BIGINT AS total_usuarios
+    FROM billetera b;
+END;
+$$;
+
+-- =========================================
+-- REPORTE 2: RENDIMIENTO DE PROMOCIONES
+-- =========================================
+-- Descripción:
+-- Mide el ROI de las campañas promocionales
+-- Refleja: Efectividad de marketing, conversión de promociones a ventas
+-- Utilidad: Optimizar futuras campañas y presupuesto de marketing
+
+CREATE OR REPLACE FUNCTION sp_reporteRendimientoPromociones(
+    _p_fecha_inicio TIMESTAMP,
+    _p_fecha_fin TIMESTAMP
+) RETURNS TABLE (
+    titulo_prom VARCHAR,
+    fecha_ini_prom TIMESTAMP,
+    fecha_fin_prom TIMESTAMP,
+    duracion_dias INTEGER,
+    descuento_prom DECIMAL(5,2),
+    publicaciones_asociadas BIGINT,
+    transacciones_generadas BIGINT,
+    ingresos_totales DECIMAL(12,2),
+    tasa_conversion DECIMAL(5,2)
+) LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        p.titulo_prom,
+        p.fecha_ini_prom,
+        p.fecha_fin_prom,
+        p.duracion_prom,
+        p.descuento_prom,
+        COUNT(DISTINCT pp.cod_pub) AS publicaciones_asociadas,
+        COUNT(DISTINCT t.cod_trans) AS transacciones_generadas,
+        COALESCE(SUM(
+            CASE 
+                WHEN prod.precio_prod IS NOT NULL THEN prod.precio_prod * pub_prod.cant_prod
+                WHEN serv.precio_serv IS NOT NULL THEN serv.precio_serv
+                ELSE 0
+            END
+        ), 0)::DECIMAL(12,2) AS ingresos_totales,
+        CASE 
+            WHEN COUNT(DISTINCT pp.cod_pub) > 0 
+            THEN (COUNT(DISTINCT t.cod_trans)::DECIMAL / COUNT(DISTINCT pp.cod_pub)) * 100
+            ELSE 0
+        END::DECIMAL(5,2) AS tasa_conversion
+    FROM promocion p
+    LEFT JOIN publicacion_promocion pp ON p.cod_prom = pp.cod_prom
+    LEFT JOIN publicacion pub ON pp.cod_pub = pub.cod_pub
+    LEFT JOIN transaccion t ON pub.cod_pub = t.cod_pub AND t.estado_trans = 'satisfactorio'
+    LEFT JOIN publicacion_producto pub_prod ON pub.cod_pub = pub_prod.cod_pub
+    LEFT JOIN producto prod ON pub_prod.cod_prod = prod.cod_prod
+    LEFT JOIN publicacion_servicio pub_serv ON pub.cod_pub = pub_serv.cod_pub
+    LEFT JOIN servicio serv ON pub_serv.cod_serv = serv.cod_serv
+    WHERE p.fecha_ini_prom >= _p_fecha_inicio
+      AND p.fecha_fin_prom <= _p_fecha_fin
+    GROUP BY p.cod_prom, p.titulo_prom, p.fecha_ini_prom, p.fecha_fin_prom, 
+             p.duracion_prom, p.descuento_prom
+    ORDER BY ingresos_totales DESC;
+END;
+$$;
+
+-- =========================================
+-- REPORTE 3: EVENTOS POR ORGANIZACIÓN
+-- =========================================
+-- Descripción:
+-- Analiza el desempeño de eventos (benéficos y monetizables)
+-- Refleja: Éxito de eventos, participación, ganancias
+-- Utilidad: Ayudar a organizaciones a planificar mejores eventos
+
+CREATE OR REPLACE FUNCTION sp_reporteEventosPorOrganizacion(
+    _p_mes INTEGER,
+    _p_anio INTEGER
+) RETURNS TABLE (
+    nom_org VARCHAR,
+    titulo_evento VARCHAR,
+    tipo_evento VARCHAR,
+    fecha_inicio_evento DATE,
+    fecha_finalizacion_evento DATE,
+    cant_personas_inscritas INTEGER,
+    ganancia_evento DECIMAL(12,2),
+    costo_inscripcion DECIMAL(12,2),
+    estado_evento VARCHAR,
+    roi DECIMAL(5,2)
+) LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        o.nom_com_org,
+        e.titulo_evento,
+        e.tipo_evento::VARCHAR,
+        e.fecha_inicio_evento,
+        e.fecha_finalizacion_evento,
+        e.cant_personas_inscritas,
+        e.ganancia_evento,
+        e.costo_inscripcion,
+        e.estado_evento::VARCHAR,
+        CASE 
+            WHEN e.cant_personas_inscritas > 0 AND e.costo_inscripcion > 0
+            THEN ((e.ganancia_evento / (e.cant_personas_inscritas * e.costo_inscripcion)) * 100)::DECIMAL(5,2)
+            ELSE 0::DECIMAL(5,2)
+        END AS roi
+    FROM evento e
+    INNER JOIN origanizacion o ON e.cod_org = o.cod_org
+    WHERE EXTRACT(MONTH FROM e.fecha_inicio_evento) = _p_mes
+      AND EXTRACT(YEAR FROM e.fecha_inicio_evento) = _p_anio
+    ORDER BY e.ganancia_evento DESC;
+END;
+$$;
+
+-- =========================================
+-- REPORTE 4: PRODUCTOS Y SERVICIOS MÁS VENDIDOS
+-- =========================================
+-- Descripción:
+-- Identifica los productos y servicios con mayor demanda
+-- Refleja: Tendencias del mercado, preferencias de consumo
+-- Utilidad: Identificar oportunidades de negocio
+
+CREATE OR REPLACE FUNCTION sp_reporteTopProductosServicios(
+    _p_mes INTEGER,
+    _p_anio INTEGER,
+    _p_limite INTEGER DEFAULT 10
+) RETURNS TABLE (
+    tipo VARCHAR,
+    nombre VARCHAR,
+    categoria VARCHAR,
+    cantidad_ventas BIGINT,
+    ingresos_totales DECIMAL(12,2),
+    calificacion_promedio DECIMAL(3,2),
+    vendedores_unicos BIGINT
+) LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    -- Productos
+    SELECT 
+        'Producto'::VARCHAR AS tipo,
+        prod.nom_prod AS nombre,
+        cat.nom_cat AS categoria,
+        COUNT(t.cod_trans) AS cantidad_ventas,
+        SUM(prod.precio_prod * pub_prod.cant_prod)::DECIMAL(12,2) AS ingresos_totales,
+        AVG(pub.calif_pond_pub)::DECIMAL(3,2) AS calificacion_promedio,
+        COUNT(DISTINCT pub.cod_us) AS vendedores_unicos
+    FROM producto prod
+    INNER JOIN publicacion_producto pub_prod ON prod.cod_prod = pub_prod.cod_prod
+    INNER JOIN publicacion pub ON pub_prod.cod_pub = pub.cod_pub
+    INNER JOIN transaccion t ON pub.cod_pub = t.cod_pub
+    INNER JOIN subcategoria_producto subcat ON prod.cod_subcat_prod = subcat.cod_subcat_prod
+    INNER JOIN categoria cat ON subcat.cod_cat = cat.cod_cat
+    WHERE EXTRACT(MONTH FROM t.fecha_trans) = _p_mes
+      AND EXTRACT(YEAR FROM t.fecha_trans) = _p_anio
+      AND t.estado_trans = 'satisfactorio'
+    GROUP BY prod.cod_prod, prod.nom_prod, cat.nom_cat
+    
+    UNION ALL
+    
+    -- Servicios
+    SELECT 
+        'Servicio'::VARCHAR AS tipo,
+        serv.nom_serv AS nombre,
+        cat.nom_cat AS categoria,
+        COUNT(t.cod_trans) AS cantidad_ventas,
+        SUM(serv.precio_serv)::DECIMAL(12,2) AS ingresos_totales,
+        AVG(pub.calif_pond_pub)::DECIMAL(3,2) AS calificacion_promedio,
+        COUNT(DISTINCT pub.cod_us) AS vendedores_unicos
+    FROM servicio serv
+    INNER JOIN publicacion_servicio pub_serv ON serv.cod_serv = pub_serv.cod_serv
+    INNER JOIN publicacion pub ON pub_serv.cod_pub = pub.cod_pub
+    INNER JOIN transaccion t ON pub.cod_pub = t.cod_pub
+    INNER JOIN categoria cat ON serv.cod_cat = cat.cod_cat
+    WHERE EXTRACT(MONTH FROM t.fecha_trans) = _p_mes
+      AND EXTRACT(YEAR FROM t.fecha_trans) = _p_anio
+      AND t.estado_trans = 'satisfactorio'
+    GROUP BY serv.cod_serv, serv.nom_serv, cat.nom_cat
+    
+    ORDER BY ingresos_totales DESC
+    LIMIT _p_limite;
+END;
+$$;
+
+-- =========================================
+-- REPORTE 5: IMPACTO AMBIENTAL COMPARATIVO
+-- =========================================
+-- Descripción:
+-- Compara el impacto ambiental entre usuarios y categorías
+-- Refleja: Compromiso ambiental, usuarios eco-friendly
+-- Utilidad: Gamificación ecológica, marketing verde
+
+CREATE OR REPLACE FUNCTION sp_reporteImpactoAmbientalComparativo(
+    _p_mes INTEGER,
+    _p_anio INTEGER
+) RETURNS TABLE (
+    huella_total_sistema DECIMAL(10,2),
+    promedio_huella_usuario DECIMAL(10,2),
+    usuarios_eco_friendly BIGINT,
+    usuarios_alto_impacto BIGINT,
+    material_mas_usado VARCHAR,
+    co2_material_mas_usado DECIMAL(10,4),
+    total_usuarios_activos BIGINT
+) LANGUAGE plpgsql AS $$
+DECLARE
+    _promedio DECIMAL(10,2);
+BEGIN
+    -- Calcular promedio
+    SELECT AVG(du.huella_co2) INTO _promedio
+    FROM detalle_usuario du
+    INNER JOIN usuario u ON du.cod_us = u.cod_us
+    WHERE u.estado_us = 'activo';
+    
+    RETURN QUERY
+    SELECT 
+        SUM(du.huella_co2)::DECIMAL(10,2) AS huella_total_sistema,
+        _promedio AS promedio_huella_usuario,
+        COUNT(*) FILTER (WHERE du.huella_co2 < _promedio) AS usuarios_eco_friendly,
+        COUNT(*) FILTER (WHERE du.huella_co2 > _promedio * 1.5) AS usuarios_alto_impacto,
+        (
+            SELECT m.nom_mat
+            FROM material m
+            INNER JOIN material_producto mp ON m.cod_mat = mp.cod_mat
+            GROUP BY m.cod_mat, m.nom_mat
+            ORDER BY COUNT(*) DESC
+            LIMIT 1
+        ) AS material_mas_usado,
+        (
+            SELECT m.factor_co2
+            FROM material m
+            INNER JOIN material_producto mp ON m.cod_mat = mp.cod_mat
+            GROUP BY m.cod_mat, m.factor_co2
+            ORDER BY COUNT(*) DESC
+            LIMIT 1
+        ) AS co2_material_mas_usado,
+        COUNT(*)::BIGINT AS total_usuarios_activos
+    FROM detalle_usuario du
+    INNER JOIN usuario u ON du.cod_us = u.cod_us
+    WHERE u.estado_us = 'activo';
+END;
+$$;
+
+-- =========================================
+-- REPORTE 6: COMPORTAMIENTO DE USUARIOS
+-- =========================================
+-- Descripción:
+-- Analiza patrones de uso y retención de usuarios
+-- Refleja: Salud de la base de usuarios, riesgo de abandono
+-- Utilidad: Estrategias de retención, mejoras de UX
+
+CREATE OR REPLACE FUNCTION sp_reporteComportamientoUsuarios(
+    _p_mes INTEGER,
+    _p_anio INTEGER
+) RETURNS TABLE (
+    usuarios_activos BIGINT,
+    usuarios_inactivos BIGINT,
+    usuarios_suspendidos BIGINT,
+    nuevos_usuarios_mes BIGINT,
+    usuarios_con_advertencias BIGINT,
+    accesos_diarios BIGINT,
+    accesos_semanales BIGINT,
+    accesos_mensuales BIGINT,
+    promedio_ventas_usuario DECIMAL(10,2)
+) LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        COUNT(*) FILTER (WHERE u.estado_us = 'activo') AS usuarios_activos,
+        COUNT(*) FILTER (WHERE u.estado_us = 'inactivo') AS usuarios_inactivos,
+        COUNT(*) FILTER (WHERE u.estado_us = 'suspendido') AS usuarios_suspendidos,
+        COUNT(*) FILTER (
+            WHERE EXTRACT(MONTH FROM du.fecha_registro) = _p_mes
+              AND EXTRACT(YEAR FROM du.fecha_registro) = _p_anio
+        ) AS nuevos_usuarios_mes,
+        COUNT(*) FILTER (WHERE du.cant_adv > 0) AS usuarios_con_advertencias,
+        COUNT(*) FILTER (
+            WHERE EXISTS (
+                SELECT 1 FROM acceso a
+                WHERE a.cod_us = u.cod_us
+                  AND a.fecha_acc >= CURRENT_DATE - INTERVAL '1 day'
+                  AND a.estado_acc = 'exitoso'
+            )
+        ) AS accesos_diarios,
+        COUNT(*) FILTER (
+            WHERE EXISTS (
+                SELECT 1 FROM acceso a
+                WHERE a.cod_us = u.cod_us
+                  AND a.fecha_acc >= CURRENT_DATE - INTERVAL '7 days'
+                  AND a.estado_acc = 'exitoso'
+            )
+        ) AS accesos_semanales,
+        COUNT(*) FILTER (
+            WHERE EXISTS (
+                SELECT 1 FROM acceso a
+                WHERE a.cod_us = u.cod_us
+                  AND a.fecha_acc >= CURRENT_DATE - INTERVAL '30 days'
+                  AND a.estado_acc = 'exitoso'
+            )
+        ) AS accesos_mensuales,
+        AVG(du.cant_ventas)::DECIMAL(10,2) AS promedio_ventas_usuario
+    FROM usuario u
+    INNER JOIN detalle_usuario du ON u.cod_us = du.cod_us;
+END;
+$$;
+
+-- =========================================
+-- REPORTE 7: INTERCAMBIOS VS COMPRAS
+-- =========================================
+-- Descripción:
+-- Compara las dos modalidades principales del sistema
+-- Refleja: Preferencias de usuarios, valor de intercambios
+-- Utilidad: Optimizar experiencia según modalidad preferida
+
+CREATE OR REPLACE FUNCTION sp_reporteIntercambiosVsCompras(
+    _p_mes INTEGER,
+    _p_anio INTEGER
+) RETURNS TABLE (
+    total_intercambios BIGINT,
+    total_compras BIGINT,
+    valor_promedio_compra DECIMAL(10,2),
+    impacto_promedio_intercambio DECIMAL(10,2),
+    usuarios_intercambian BIGINT,
+    usuarios_compran BIGINT,
+    preferencia_sistema VARCHAR
+) LANGUAGE plpgsql AS $$
+DECLARE
+    _total_intercambios BIGINT;
+    _total_compras BIGINT;
+BEGIN
+    -- Contar intercambios del mes
+    SELECT COUNT(*) INTO _total_intercambios
+    FROM intercambio i
+    WHERE EXTRACT(MONTH FROM CURRENT_DATE) = _p_mes
+      AND EXTRACT(YEAR FROM CURRENT_DATE) = _p_anio;
+    
+    -- Contar compras del mes
+    SELECT COUNT(*) INTO _total_compras
+    FROM transaccion t
+    WHERE t.cod_pub IS NOT NULL
+      AND EXTRACT(MONTH FROM t.fecha_trans) = _p_mes
+      AND EXTRACT(YEAR FROM t.fecha_trans) = _p_anio
+      AND t.estado_trans = 'satisfactorio';
+    
+    RETURN QUERY
+    SELECT 
+        _total_intercambios AS total_intercambios,
+        _total_compras AS total_compras,
+        (SELECT AVG(
+            COALESCE(prod.precio_prod * pp.cant_prod, serv.precio_serv, 0)
+        )::DECIMAL(10,2)
+         FROM transaccion t
+         LEFT JOIN publicacion pub ON t.cod_pub = pub.cod_pub
+         LEFT JOIN publicacion_producto pp ON pub.cod_pub = pp.cod_pub
+         LEFT JOIN producto prod ON pp.cod_prod = prod.cod_prod
+         LEFT JOIN publicacion_servicio ps ON pub.cod_pub = ps.cod_pub
+         LEFT JOIN servicio serv ON ps.cod_serv = serv.cod_serv
+         WHERE t.estado_trans = 'satisfactorio'
+           AND t.cod_pub IS NOT NULL) AS valor_promedio_compra,
+        (SELECT AVG(i.impacto_amb_inter)::DECIMAL(10,2) FROM intercambio i) AS impacto_promedio_intercambio,
+        (SELECT COUNT(DISTINCT cod_us_1) FROM intercambio) AS usuarios_intercambian,
+        (SELECT COUNT(DISTINCT cod_us_origen) FROM transaccion WHERE cod_pub IS NOT NULL) AS usuarios_compran,
+        CASE 
+            WHEN _total_intercambios > _total_compras THEN 'Intercambio'
+            WHEN _total_compras > _total_intercambios THEN 'Compra'
+            ELSE 'Equilibrado'
+        END::VARCHAR AS preferencia_sistema;
+END;
+$$;
+
+-- =========================================
+-- REPORTE 8: LOGROS Y GAMIFICACIÓN
+-- =========================================
+-- Descripción:
+-- Evalúa la efectividad del sistema de logros
+-- Refleja: Engagement, motivación de usuarios
+-- Utilidad: Ajustar dificultad de logros, mejorar retención
+
+CREATE OR REPLACE FUNCTION sp_reporteLogrosGamificacion()
+RETURNS TABLE (
+    total_logros BIGINT,
+    logros_completados BIGINT,
+    logros_en_progreso BIGINT,
+    logro_mas_obtenido VARCHAR,
+    logro_menos_obtenido VARCHAR,
+    usuarios_con_logros BIGINT,
+    progreso_promedio DECIMAL(5,2),
+    recompensas_entregadas BIGINT,
+    tasa_completacion DECIMAL(5,2)
+) LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        (SELECT COUNT(*) FROM logro) AS total_logros,
+        (SELECT COUNT(*) FROM usuario_logro WHERE estado_logro = 'completado') AS logros_completados,
+        (SELECT COUNT(*) FROM usuario_logro WHERE estado_logro = 'en_progreso') AS logros_en_progreso,
+        (SELECT l.titulo_logro 
+         FROM logro l
+         INNER JOIN usuario_logro ul ON l.cod_logro = ul.cod_logro
+         WHERE ul.estado_logro = 'completado'
+         GROUP BY l.cod_logro, l.titulo_logro
+         ORDER BY COUNT(*) DESC
+         LIMIT 1) AS logro_mas_obtenido,
+        (SELECT l.titulo_logro 
+         FROM logro l
+         LEFT JOIN usuario_logro ul ON l.cod_logro = ul.cod_logro AND ul.estado_logro = 'completado'
+         GROUP BY l.cod_logro, l.titulo_logro
+         ORDER BY COUNT(ul.cod_logro) ASC
+         LIMIT 1) AS logro_menos_obtenido,
+        (SELECT COUNT(DISTINCT cod_us) FROM usuario_logro) AS usuarios_con_logros,
+        (SELECT AVG(progreso)::DECIMAL(5,2) FROM usuario_logro) AS progreso_promedio,
+        (SELECT COUNT(*) FROM usuario_logro WHERE estado_logro = 'completado') AS recompensas_entregadas,
+        CASE 
+            WHEN (SELECT COUNT(*) FROM logro) > 0 
+            THEN ((SELECT COUNT(*) FROM usuario_logro WHERE estado_logro = 'completado')::DECIMAL / 
+                  (SELECT COUNT(*) FROM logro)::DECIMAL * 100)::DECIMAL(5,2)
+            ELSE 0::DECIMAL(5,2)
+        END AS tasa_completacion;
+END;
+$$;
+
+-- =========================================
+-- REPORTE 9: CALIFICACIONES Y SATISFACCIÓN
+-- =========================================
+-- Descripción:
+-- Mide la calidad del servicio y satisfacción general
+-- Refleja: Satisfacción de usuarios, calidad de publicaciones
+-- Utilidad: Identificar áreas de mejora, usuarios problemáticos
+
+CREATE OR REPLACE FUNCTION sp_reporteCalificacionesSatisfaccion(
+    _p_mes INTEGER,
+    _p_anio INTEGER
+) RETURNS TABLE (
+    calificacion_promedio_publicaciones DECIMAL(3,2),
+    calificacion_promedio_usuarios DECIMAL(2,1),
+    publicaciones_5_estrellas BIGINT,
+    publicaciones_1_estrella BIGINT,
+    usuarios_mejor_calificados BIGINT,
+    usuarios_peor_calificados BIGINT,
+    total_calificaciones BIGINT,
+    tendencia VARCHAR
+) LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        (SELECT AVG(calif_pond_pub)::DECIMAL(3,2) FROM publicacion) AS calificacion_promedio_publicaciones,
+        (SELECT AVG(calif_pond_us)::DECIMAL(2,1) FROM detalle_usuario) AS calificacion_promedio_usuarios,
+        (SELECT COUNT(*) FROM publicacion WHERE calif_pond_pub >= 4.5) AS publicaciones_5_estrellas,
+        (SELECT COUNT(*) FROM publicacion WHERE calif_pond_pub <= 1.5) AS publicaciones_1_estrella,
+        (SELECT COUNT(*) FROM detalle_usuario WHERE calif_pond_us >= 4.5) AS usuarios_mejor_calificados,
+        (SELECT COUNT(*) FROM detalle_usuario WHERE calif_pond_us <= 2.0) AS usuarios_peor_calificados,
+        (SELECT COUNT(*) FROM calificacion) AS total_calificaciones,
+        CASE 
+            WHEN (SELECT AVG(calif_pond_pub) FROM publicacion) >= 4.0 THEN 'Excelente'
+            WHEN (SELECT AVG(calif_pond_pub) FROM publicacion) >= 3.0 THEN 'Bueno'
+            WHEN (SELECT AVG(calif_pond_pub) FROM publicacion) >= 2.0 THEN 'Regular'
+            ELSE 'Necesita Mejora'
+        END::VARCHAR AS tendencia;
+END;
+$$;
+
+-- =========================================
+-- REPORTE 10: POTENCIADORES Y MONETIZACIÓN
+-- =========================================
+-- Descripción:
+-- Analiza el uso de potenciadores y su impacto en ingresos
+-- Refleja: Ingresos por monetización, efectividad de potenciadores
+-- Utilidad: Optimizar pricing y estrategia de monetización
+
+CREATE OR REPLACE FUNCTION sp_reportePotenciadoresMonetizacion(
+    _p_mes INTEGER,
+    _p_anio INTEGER
+) RETURNS TABLE (
+    total_potenciadores_vendidos BIGINT,
+    ingresos_potenciadores DECIMAL(12,2),
+    potenciador_mas_vendido VARCHAR,
+    nivel_mas_popular VARCHAR,
+    usuarios_compradores BIGINT,
+    promedio_gasto_usuario DECIMAL(12,2),
+    multiplicador_promedio DECIMAL(5,2)
+) LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        COUNT(t.cod_trans) AS total_potenciadores_vendidos,
+        SUM(p.precio_potenciador)::DECIMAL(12,2) AS ingresos_potenciadores,
+        (SELECT pot.nombre_potenciador
+         FROM potenciador pot
+         INNER JOIN transaccion tr ON pot.cod_potenciador = tr.cod_potenciador
+         WHERE EXTRACT(MONTH FROM tr.fecha_trans) = _p_mes
+           AND EXTRACT(YEAR FROM tr.fecha_trans) = _p_anio
+           AND tr.estado_trans = 'satisfactorio'
+         GROUP BY pot.cod_potenciador, pot.nombre_potenciador
+         ORDER BY COUNT(*) DESC
+         LIMIT 1) AS potenciador_mas_vendido,
+        (SELECT pot.nivel_potenciador::VARCHAR
+         FROM potenciador pot
+         INNER JOIN transaccion tr ON pot.cod_potenciador = tr.cod_potenciador
+         WHERE EXTRACT(MONTH FROM tr.fecha_trans) = _p_mes
+           AND EXTRACT(YEAR FROM tr.fecha_trans) = _p_anio
+           AND tr.estado_trans = 'satisfactorio'
+         GROUP BY pot.nivel_potenciador
+         ORDER BY COUNT(*) DESC
+         LIMIT 1) AS nivel_mas_popular,
+        COUNT(DISTINCT t.cod_us_origen) AS usuarios_compradores,
+        AVG(p.precio_potenciador)::DECIMAL(12,2) AS promedio_gasto_usuario,
+        AVG(p.multiplicador_potenciador)::DECIMAL(5,2) AS multiplicador_promedio
+    FROM transaccion t
+    INNER JOIN potenciador p ON t.cod_potenciador = p.cod_potenciador
+    WHERE EXTRACT(MONTH FROM t.fecha_trans) = _p_mes
+      AND EXTRACT(YEAR FROM t.fecha_trans) = _p_anio
+      AND t.estado_trans = 'satisfactorio';
+END;
+$$;
+

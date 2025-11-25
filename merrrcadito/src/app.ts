@@ -3,12 +3,18 @@ import connectToDatabase, { prisma } from './database';
 
 import { PORT } from './config/env.config';
 
-async function startServer(){
-    try{
+// Fix para serializar BigInt en JSON
+(BigInt.prototype as any).toJSON = function () {
+    return Number(this);
+};
+
+
+async function startServer() {
+    try {
         Server.listen(PORT, () => {
             console.info(`Server running on port: ${PORT}`);
         });
-    }catch(err){
+    } catch (err) {
         console.error('Error starting server:', err);
         process.exit(1);
     }

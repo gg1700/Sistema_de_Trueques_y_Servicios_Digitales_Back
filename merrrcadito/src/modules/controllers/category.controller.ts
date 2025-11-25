@@ -303,10 +303,16 @@ export async function getCategoryProductReportByMonth(req: Request, res: Respons
         data: []
       });
     }
+
+    // Convertir BigInt a Number para evitar error de serialización
+    const serializedReport = JSON.parse(JSON.stringify(report, (key, value) =>
+      typeof value === 'bigint' ? Number(value) : value
+    ));
+
     return res.status(200).json({
       success: true,
       message: 'Reporte de categorías de productos por mes obtenido correctamente.',
-      data: report
+      data: serializedReport
     });
   } catch (err) {
     return res.status(500).json({

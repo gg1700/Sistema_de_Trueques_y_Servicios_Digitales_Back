@@ -219,7 +219,7 @@ export async function getRankingUsersBySells(req: Request, res: Response) {
             error: (err as Error).message
         });
     }
-}   
+}
 
 export async function getUserImage(req: Request, res: Response) {
     try {
@@ -247,7 +247,7 @@ export async function getUserImage(req: Request, res: Response) {
     }
 }
 
-export async function updateCo2Impact (req: Request, res: Response) {
+export async function updateCo2Impact(req: Request, res: Response) {
     try {
         const { cod_us, cod_pub } = req.query;
         if (!cod_us || typeof cod_us !== 'string' || !cod_pub || typeof cod_pub !== 'string') {
@@ -278,7 +278,7 @@ export async function updateCo2Impact (req: Request, res: Response) {
     }
 }
 
-export async function getUsersActionsByMonth (req: Request, res: Response) {
+export async function getUsersActionsByMonth(req: Request, res: Response) {
     try {
         const { month } = req.query;
         if (!month || typeof month !== 'string') {
@@ -304,6 +304,37 @@ export async function getUsersActionsByMonth (req: Request, res: Response) {
         return res.status(500).json({
             success: false,
             message: 'Error al obtener el reporte de actividad de usuarios por mes: ',
+            error: (err as Error).message
+        });
+    }
+}
+
+export async function getUserEnvironmentalImpact(req: Request, res: Response) {
+    try {
+        const { id } = req.params;
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de usuario inválido.'
+            });
+        }
+        const cod_us = parseInt(id);
+        if (isNaN(cod_us)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de usuario debe ser un número.'
+            });
+        }
+        const environmental_data = await UserService.get_user_environmental_impact(cod_us);
+        return res.status(200).json({
+            success: true,
+            message: 'Datos de impacto ambiental del usuario obtenidos exitosamente.',
+            data: environmental_data
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener los datos de impacto ambiental del usuario.',
             error: (err as Error).message
         });
     }

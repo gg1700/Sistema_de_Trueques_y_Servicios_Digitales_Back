@@ -37,7 +37,24 @@ export async function get_all_active_product_posts() {
             SELECT * FROM sp_obtenerpublicacionesproducto()
         `;
         return posts;
-    }catch (err) {
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}
+
+export async function get_post_by_id(cod_pub: string) {
+    try {
+        const post = await prisma.$queryRaw`
+            SELECT 
+                p.cod_pub,
+                p.contenido as titulo_pub
+            FROM publicacion p
+            WHERE p.cod_pub = ${cod_pub}::INTEGER
+            LIMIT 1
+        `;
+        const postArray = post as any[];
+        return postArray.length > 0 ? postArray[0] : null;
+    } catch (err) {
         throw new Error((err as Error).message);
     }
 }

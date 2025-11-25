@@ -56,6 +56,7 @@ export async function create_exchange(data: CreateExchangeData) {
             const impacto_amb_inter = Number((data.peso_prod * data.cant_prod_origen * factor_base).toFixed(2));
 
             // 3. Crear el intercambio (Oferta Abierta)
+            // NOTA: Se eliminan fecha_inter y estado_inter porque no existen en la tabla
             const intercambioResult: any[] = await tx.$queryRaw`
                 INSERT INTO intercambio (
                     cod_us_1,
@@ -157,35 +158,68 @@ async function calcular_impacto_intercambio(
 // Obtener intercambios de un usuario
 export async function get_user_exchanges(cod_us: number) {
     try {
+        console.log(`Consultando intercambios para usuario ${cod_us} (v2 - sin fecha/estado)`);
+        // Usamos LEFT JOIN para todo para asegurar que traemos el intercambio aunque falten datos relacionados
+        // NOTA: Se han eliminado fecha_inter y estado_inter del SELECT porque no existen en la tabla
         const exchanges: any[] = await prisma.$queryRaw`
             SELECT 
                 i.cod_inter,
                 i.cod_us_1,
                 i.cod_us_2,
+                u2.nom_us as nombre_usuario_2,
+                u2.handle_name as handle_name_2,
                 i.cant_prod_origen,
                 i.unidad_medida_origen,
+                i.cant_prod_destino,
+                i.unidad_medida_destino,
                 i.impacto_amb_inter,
                 i.foto_inter,
-                p.nom_prod as nombre_prod_origen,
-                p.desc_prod as descripcion_prod
+                ip.fecha_inter,
+                ip.estado_inter,
+                ip.cod_prod_origen,
+                p1.nom_prod as nombre_prod_origen,
+                ip.cod_prod_destino,
+                p2.nom_prod as nombre_prod_destino
             FROM intercambio i
-            INNER JOIN intercambio_producto ip ON i.cod_inter = ip.cod_inter
-            INNER JOIN producto p ON ip.cod_prod_origen = p.cod_prod
+            LEFT JOIN usuario u2 ON i.cod_us_2 = u2.cod_us
+            LEFT JOIN intercambio_producto ip ON i.cod_inter = ip.cod_inter
+            LEFT JOIN producto p1 ON ip.cod_prod_origen = p1.cod_prod
+            LEFT JOIN producto p2 ON ip.cod_prod_destino = p2.cod_prod
             WHERE i.cod_us_1 = ${cod_us}
             ORDER BY i.cod_inter DESC
         `;
 
-        // Procesar resultados para agregar campo tiene_foto como booleano
-        const processedExchanges = exchanges.map(ex => ({
-            ...ex,
-            tiene_foto: ex.foto_inter !== null && ex.foto_inter !== undefined,
-            foto_inter: undefined // No enviar el bytea completo al frontend
-        }));
+        // Procesar resultados para manejar nulos y formatos
+        const processedExchanges = exchanges.map(ex => {
+            // Manejo de fecha
+            let fecha = new Date();
+            if (ex.fecha_inter) {
+                fecha = new Date(ex.fecha_inter);
+            }
+
+            // Manejo de usuario 2 (si es nulo, mostrar "Pendiente" o el mismo usuario si es oferta abierta)
+            const nombre_usuario_2 = ex.nombre_usuario_2 || 'Usuario';
+            const handle_name_2 = ex.handle_name_2 || 'pendiente';
+
+            // Manejo de producto destino
+            const nombre_prod_destino = ex.nombre_prod_destino || 'Por definir';
+
+            return {
+                ...ex,
+                tiene_foto: ex.foto_inter !== null && ex.foto_inter !== undefined,
+                foto_inter: undefined, // No enviar el bytea completo al frontend
+                fecha_inter: fecha.toISOString(),
+                estado_inter: ex.estado_inter || 'pendiente',
+                nombre_usuario_2,
+                handle_name_2,
+                nombre_prod_destino
+            };
+        });
 
         console.log('Intercambios procesados:', processedExchanges.map(ex => ({
             cod_inter: ex.cod_inter,
-            tiene_foto: ex.tiene_foto,
-            nombre: ex.nombre_prod_origen
+            fecha: ex.fecha_inter,
+            usuario2: ex.handle_name_2
         })));
 
         return processedExchanges;

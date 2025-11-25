@@ -10,6 +10,9 @@ const router = Router();
 // Crear un nuevo intercambio
 router.post('/create', upload.single('foto_inter'), ExchangeController.createExchange);
 
+// Obtener intercambios de un usuario (Historial)
+router.get('/get_user_exchange_history', ExchangeController.getUserExchangeHistory);
+
 // Obtener intercambios de un usuario
 router.get('/user/:cod_us', ExchangeController.getUserExchanges);
 

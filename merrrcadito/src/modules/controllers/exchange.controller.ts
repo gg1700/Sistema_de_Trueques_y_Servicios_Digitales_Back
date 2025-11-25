@@ -100,6 +100,34 @@ export async function getUserExchanges(req: Request, res: Response) {
     }
 }
 
+export async function getUserExchangeHistory(req: Request, res: Response) {
+    try {
+        const { cod_us } = req.query;
+
+        if (!cod_us) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de usuario requerido'
+            });
+        }
+
+        const exchanges = await ExchangeService.get_user_exchanges(parseInt(cod_us as string));
+
+        return res.status(200).json({
+            success: true,
+            message: 'Historial de intercambios obtenido exitosamente',
+            data: exchanges
+        });
+    } catch (error) {
+        console.error('Error en getUserExchangeHistory:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener el historial de intercambios',
+            error: (error as Error).message
+        });
+    }
+}
+
 export async function getExchangeImage(req: Request, res: Response) {
     try {
         const { cod_inter } = req.params;

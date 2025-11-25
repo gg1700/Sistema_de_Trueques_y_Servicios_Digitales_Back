@@ -62,7 +62,7 @@ export async function getUserTransactionHistory(req: Request, res: Response) {
     }
 }
 
-export async function getCompleteTransactionHistoryByMonth (req: Request, res: Response) {
+export async function getCompleteTransactionHistoryByMonth(req: Request, res: Response) {
     try {
         const { month } = req.query;
         if (!month || typeof month !== 'string') {
@@ -89,6 +89,58 @@ export async function getCompleteTransactionHistoryByMonth (req: Request, res: R
             success: false,
             message: 'Error al obtener los datos del historial de transacciones del mes.',
             error: (err as Error).message
+        });
+    }
+}
+
+export async function getPendingCollections(req: Request, res: Response) {
+    try {
+        const { cod_us } = req.params;
+
+        if (!cod_us) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de usuario requerido'
+            });
+        }
+
+        const collections = await TransactionService.getPendingCollections(parseInt(cod_us));
+
+        return res.status(200).json({
+            success: true,
+            message: 'Cobros pendientes obtenidos exitosamente',
+            data: collections
+        });
+    } catch (error) {
+        console.error('Error en getPendingCollections controller:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener los cobros pendientes',
+            error: (error as Error).message
+        });
+    }
+}
+
+export async function confirmPayment(req: Request, res: Response) {
+    try {
+        const { cod_us, cod_escrow } = req.body;
+
+        if (!cod_us || !cod_escrow) {
+            return res.status(400).json({
+                success: false,
+                message: 'Se requieren cod_us y cod_escrow.'
+            });
+        }
+
+        const result = await TransactionService.confirmPayment(Number(cod_us), Number(cod_escrow));
+
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error('Error en confirmPayment controller:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al confirmar el pago.',
+            error: (error as Error).message
         });
     }
 }

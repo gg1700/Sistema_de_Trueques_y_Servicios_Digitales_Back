@@ -12,4 +12,8 @@ router.get('/get_user_transaction_history', TransactionController.getUserTransac
 
 router.get('/get_complete_transactions_month', TransactionController.getCompleteTransactionHistoryByMonth);
 
+router.get('/pending_collections/:cod_us', TransactionController.getPendingCollections);
+
+router.post('/confirm_payment', TransactionController.confirmPayment);
+
 export default router;

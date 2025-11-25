@@ -304,7 +304,7 @@ export async function get_complete_transaction_history_by_month(month: string) {
 
 export async function getPendingCollections(cod_us: number) {
     try {
-        // Consultar escrows retenidos donde el usuario es el destino de la transacción
+        // Consultar todos los escrows donde el usuario es el destino de la transacción
         const pendingCollections: any[] = await prisma.$queryRaw`
             SELECT 
                 e.cod_escrow,
@@ -324,7 +324,6 @@ export async function getPendingCollections(cod_us: number) {
             INNER JOIN transaccion t ON e.cod_trans = t.cod_trans
             INNER JOIN usuario u_origen ON t.cod_us_origen = u_origen.cod_us
             WHERE t.cod_us_destino = ${cod_us}
-            AND e.estado_escrow = 'retenido'::"EscrowState"
             ORDER BY t.fecha_trans DESC
         `;
 

@@ -23,6 +23,8 @@ export async function createService(req: Request, res: Response) {
             });
         }
 
+        const foto_serv = req.file ? req.file.buffer : undefined;
+
         const result = await serviceService.createService({
             cod_cat,
             nom_serv,
@@ -33,6 +35,7 @@ export async function createService(req: Request, res: Response) {
             cod_us,
             hrs_ini_dia_serv: hrs_ini_dia_serv || "08:00",
             hrs_fin_dia_serv: hrs_fin_dia_serv || "18:00",
+            foto_serv,
         });
 
         return res.status(201).json(result);

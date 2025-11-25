@@ -3,12 +3,16 @@ import connectToDatabase, { prisma } from './database';
 
 import { PORT } from './config/env.config';
 
-async function startServer(){
-    try{
-        Server.listen(PORT, () => {
+async function startServer() {
+    try {
+        const server = Server.listen(PORT, () => {
             console.info(`Server running on port: ${PORT}`);
         });
-    }catch(err){
+
+        // Keep the process alive just in case
+        setInterval(() => { }, 1000 * 60 * 60);
+
+    } catch (err) {
         console.error('Error starting server:', err);
         process.exit(1);
     }
@@ -24,7 +28,11 @@ process.on('SIGTERM', async () => {
 });
 
 process.on('SIGINT', async () => {
-    console.info('SIGINT recived, clossing gracefully.');
+    console.info('SIGINT received, closing gracefully.');
     await prisma.$disconnect();
     process.exit(0);
+});
+
+process.on('exit', (code) => {
+    console.info(`Process exiting with code: ${code}`);
 });

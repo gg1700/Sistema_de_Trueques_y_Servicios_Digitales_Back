@@ -1,0 +1,34 @@
+﻿"use client";
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
+import styles from "./UserProfile.module.css";
+import FileInput from "@/Components/Templates/ModalsProfile/FileInput";
+import ProfileInput from "@/Components/Atoms/Input/ProfileInput/ProfileInput";
+import LikesSection from "./LikesSection";
+import EventsSection from "./EventsSection";
+import ExploreSection from "./ExploreSection";
+import ExchangeRegistrationForm from "./ExchangeRegistrationForm";
+import ServiceRegistrationForm from "./ServiceRegistrationForm";
+import { getNavItems } from "../../../Utils/navigation";
+
+const USERS_API_BASE = process.env.NEXT_PUBLIC_USERS_API_BASE_URL ?? "http://localhost:5000/api/users";
+const PRODUCTS_API_BASE = process.env.NEXT_PUBLIC_PRODUCTS_API_BASE_URL ?? "http://localhost:5000/api/products";
+const POSTS_API_BASE = process.env.NEXT_PUBLIC_POSTS_API_BASE_URL ?? "http://localhost:5000/api/posts";
+const CATEGORIES_API_BASE = process.env.NEXT_PUBLIC_CATEGORIES_API_BASE_URL ?? "http://localhost:5000/api/categories";
+const SUBCATEGORIES_API_BASE = process.env.NEXT_PUBLIC_SUBCATEGORIES_API_BASE_URL ?? "http://localhost:5000/api/subcategories";
+const PUBLICATIONS_API_BASE = process.env.NEXT_PUBLIC_PUBLICATIONS_API_BASE_URL ?? "http://localhost:5000/api/publications";
+const SERVICES_API_BASE = process.env.NEXT_PUBLIC_SERVICES_API_BASE_URL ?? "http://localhost:5000/api/services";
+
+type Tab = "offers" | "publish" | "likes" | "events" | "explore";
+type PublishType = "product" | "service" | "exchange";
+type NavRole = "admin" | "user";
+type Role = NavRole | "entrepreneur";
+
+interface Offer {
+  id: number;
+  title: string;
+  description: string;
+  image?: string;
+  price?: number;
+}

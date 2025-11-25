@@ -15,6 +15,10 @@ import TokenPackageRoutes from '../modules/routes/token_package.routes';
 import AchievementRoutes from '../modules/routes/achievment.routes';
 import PublicationRoutes from '../modules/routes/publication.routes';
 import EventRoutes from '../modules/routes/event.routes';
+import EventEnrollmentRoutes from '../modules/routes/event-enrollment.routes';
+import LikesRoutes from '../modules/routes/likes.routes';
+import ServiceRoutes from '../modules/routes/service.routes';
+import ExchangeRoutes from '../modules/routes/exchange.routes';
 
 const router = Router();
 
@@ -33,6 +37,10 @@ router.use('/api/token_package', TokenPackageRoutes);
 router.use('/api/achievments', AchievementRoutes);
 router.use('/api/publications', PublicationRoutes);
 router.use('/api/events', EventRoutes);
+router.use('/api/event-enrollments', EventEnrollmentRoutes);
+router.use('/api/likes', LikesRoutes);
+router.use('/api/services', ServiceRoutes);
+router.use('/api/exchanges', ExchangeRoutes);
 
 router.use('/', HealthCheck);
 

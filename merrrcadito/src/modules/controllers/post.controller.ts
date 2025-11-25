@@ -15,6 +15,12 @@ export async function createPost(req: Request, res: Response) {
     const attributes = req.body;
     let valid_image = null;
 
+    console.log("=== CREATE POST DEBUG ===");
+    console.log("cod_us:", cod_us);
+    console.log("cod_prod:", cod_prod);
+    console.log("attributes:", attributes);
+    console.log("has file:", !!req.file);
+
     if (!req.file) {
       valid_image = await ImageService.processImage(Buffer.from(hexa_string, "hex"));
       if (!valid_image) {
@@ -54,6 +60,11 @@ export async function createPost(req: Request, res: Response) {
     await PostService.create_post(cod_us, cod_prod, attributes, image_buffer);
     return res.status(201).json({ success: true, message: "Publicación creada correctamente." });
   } catch (err) {
+    console.error("=== ERROR EN CREATE POST ===");
+    console.error("Error:", err);
+    console.error("Request body:", req.body);
+    console.error("Request query:", req.query);
+    console.error("Request file:", req.file ? "File present" : "No file");
     return res.status(500).json({
       success: false,
       message: "Error al crear la publicación: ",
@@ -63,25 +74,52 @@ export async function createPost(req: Request, res: Response) {
 }
 
 export async function getAllActiveProductPosts(req: Request, res: Response) {
-    try{
-        const active_product_posts = await PostService.get_all_active_product_posts();
-        if(!active_product_posts){
-            return res.status(404).json({
-                success: false,
-                message: 'No se encontraron publicaciones activas de productos.',
-                data: []
-            });
-        }
-        return res.status(200).json({
-            success: true,
-            message: 'Publicaciones activas del producto obtenidas correctamente.',
-            data: active_product_posts
-        });
-    }catch(err){
-        return res.status(500).json({
-            success: false,
-            message: 'Error al obtener las publicaciones activas del producto: ',
-            error: (err as Error).message
-        });
+  try {
+    const active_product_posts = await PostService.get_all_active_product_posts();
+    if (!active_product_posts) {
+      return res.status(404).json({
+        success: false,
+        message: 'No se encontraron publicaciones activas de productos.',
+        data: []
+      });
     }
+    return res.status(200).json({
+      success: true,
+      message: 'Publicaciones activas del producto obtenidas correctamente.',
+      data: active_product_posts
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener las publicaciones activas del producto: ',
+      error: (err as Error).message
+    });
+  }
+}
+
+export async function getAllPostsExceptUser(req: Request, res: Response) {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId es requerido'
+      });
+    }
+
+    const posts = await PostService.get_all_posts_except_user(parseInt(userId));
+
+    return res.status(200).json({
+      success: true,
+      data: posts
+    });
+  } catch (err) {
+    console.error("Error en getAllPostsExceptUser:", err);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener publicaciones para explorar',
+      error: (err as Error).message
+    });
+  }
 }

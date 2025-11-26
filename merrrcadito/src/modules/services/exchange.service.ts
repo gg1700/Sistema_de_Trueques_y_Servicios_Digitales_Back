@@ -15,7 +15,7 @@ interface CreateExchangeData {
     foto_inter?: Buffer;
 }
 
-// Crear un nuevo intercambio (Oferta Abierta con creación de producto)
+// Crear un nuevo intercambio (Oferta Abierta con creación de producto).
 export async function create_exchange(data: CreateExchangeData) {
     try {
         console.log('Creando oferta de intercambio y producto:', data);
@@ -269,7 +269,7 @@ export async function proposeExchange(data: {
         return await prisma.$transaction(async (tx) => {
             // 1. Verificar que el intercambio existe
             const intercambioData: any[] = await tx.$queryRaw`
-                SELECT cod_inter, cod_us_1, cod_us_2
+                SELECT cod_inter, cod_us_1, cod_us_2, cant_prod_origen, unidad_medida_origen
                 FROM intercambio
                 WHERE cod_inter = ${data.cod_inter}
             `;
@@ -281,9 +281,9 @@ export async function proposeExchange(data: {
             const intercambio = intercambioData[0];
 
             // 2. Validar que el usuario no esté proponiendo a su propio intercambio
-            if (intercambio.cod_us_1 === data.cod_us_2) {
-                throw new Error('No puedes proponer un producto a tu propio intercambio.');
-            }
+            // if (intercambio.cod_us_1 === data.cod_us_2) {
+            //     throw new Error('No puedes proponer un producto a tu propio intercambio.');
+            // }
 
             // 3. Validar que el intercambio no tenga ya una propuesta aceptada
             if (intercambio.cod_us_2 !== intercambio.cod_us_1) {
@@ -320,19 +320,22 @@ export async function proposeExchange(data: {
                 throw new Error('Error al crear el producto propuesto');
             }
 
-            // 5. Actualizar intercambio con los datos del usuario interesado
+            // 5. Actualizar intercambio: El que propone pasa a ser el ORIGEN (cod_us_1)
+            // Y el creador (que estaba en cod_us_1) pasa a ser el DESTINO (cod_us_2)
             await tx.$queryRaw`
                 UPDATE intercambio
-                SET cod_us_2 = ${data.cod_us_2},
-                    cant_prod_destino = ${data.cant_prod_destino},
-                    unidad_medida_destino = ${data.unidad_medida_destino}
+                SET cod_us_1 = ${data.cod_us_2},
+                    cant_prod_origen = ${data.cant_prod_destino},
+                    unidad_medida_origen = ${data.unidad_medida_destino},
+                    cant_prod_destino = ${intercambio.cant_prod_origen},
+                    unidad_medida_destino = ${intercambio.unidad_medida_origen}
                 WHERE cod_inter = ${data.cod_inter}
             `;
 
-            // 6. Actualizar intercambio_producto con el producto propuesto
+            // 6. Actualizar intercambio_producto: El producto propuesto pasa a ser el ORIGEN
             await tx.$queryRaw`
                 UPDATE intercambio_producto
-                SET cod_prod_destino = ${cod_prod_propuesto}
+                SET cod_prod_origen = ${cod_prod_propuesto}
                 WHERE cod_inter = ${data.cod_inter}
             `;
 

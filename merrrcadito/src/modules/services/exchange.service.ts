@@ -158,9 +158,8 @@ async function calcular_impacto_intercambio(
 // Obtener intercambios de un usuario
 export async function get_user_exchanges(cod_us: number) {
     try {
-        console.log(`Consultando intercambios para usuario ${cod_us} (v2 - sin fecha/estado)`);
-        // Usamos LEFT JOIN para todo para asegurar que traemos el intercambio aunque falten datos relacionados
-        // NOTA: Se han eliminado fecha_inter y estado_inter del SELECT porque no existen en la tabla
+        console.log(`Consultando intercambios para usuario ${cod_us} (v3 - con historial rechazado)`);
+
         const exchanges: any[] = await prisma.$queryRaw`
             SELECT DISTINCT ON (i.cod_inter, COALESCE(ip.estado_inter::text, 'pendiente'))
                 i.cod_inter,
@@ -174,10 +173,7 @@ export async function get_user_exchanges(cod_us: number) {
                 i.unidad_medida_destino,
                 i.impacto_amb_inter,
                 i.foto_inter,
-                CASE 
-                    WHEN i.estado_inter = 'pendiente' THEN 'pendiente' 
-                    ELSE COALESCE(ip.estado_inter::text, i.estado_inter::text) 
-                END as estado_inter,
+                COALESCE(ip.estado_inter::text, i.estado_inter::text) as estado_inter,
                 ip.fecha_inter,
                 ip.cod_prod_origen,
                 p1.nom_prod as nombre_prod_origen,
@@ -188,7 +184,8 @@ export async function get_user_exchanges(cod_us: number) {
             LEFT JOIN intercambio_producto ip ON i.cod_inter = ip.cod_inter
             LEFT JOIN producto p1 ON ip.cod_prod_origen = p1.cod_prod
             LEFT JOIN producto p2 ON ip.cod_prod_destino = p2.cod_prod
-            WHERE i.cod_us_1 = ${cod_us}
+            WHERE i.cod_us_1 = ${cod_us} 
+               OR ip.cod_us_origen = ${cod_us}
             ORDER BY i.cod_inter DESC, COALESCE(ip.estado_inter::text, 'pendiente'), ip.fecha_inter DESC
         `;
 
@@ -324,8 +321,6 @@ export async function proposeExchange(data: {
             }
 
             // 5. Actualizar intercambio: El que propone se convierte en el ORIGEN (cod_us_1)
-            // El creador YA ESTÁ en el DESTINO (cod_us_2), así que no se toca.
-            // Establecer estado como 'pendiente'
             await tx.$queryRaw`
                 UPDATE intercambio
                 SET cod_us_1 = ${data.cod_us_2},
@@ -340,10 +335,13 @@ export async function proposeExchange(data: {
             console.log('Actualizando intercambio_producto para cod_inter:', data.cod_inter);
 
             // 6. Actualizar intercambio_producto: El producto propuesto se asigna al ORIGEN
+            // Y registramos al usuario origen en la tabla de relación también
             await tx.$queryRaw`
                 UPDATE intercambio_producto
-                SET cod_prod_origen = ${cod_prod_propuesto}
-                WHERE cod_inter = ${data.cod_inter}
+                SET cod_prod_origen = ${cod_prod_propuesto},
+                    cod_us_origen = ${data.cod_us_2}
+                WHERE cod_inter = ${data.cod_inter} 
+                  AND cod_prod_origen IS NULL
             `;
 
             console.log(`Propuesta creada para intercambio ${data.cod_inter}, producto: ${cod_prod_propuesto}`);
@@ -525,7 +523,7 @@ export async function accept_exchange_proposal(cod_inter: number, cod_us: number
             await tx.$queryRaw`
                 UPDATE intercambio_producto
                 SET estado_inter = 'satisfactorio'::"TransactionState"
-                WHERE cod_inter = ${cod_inter}
+                WHERE cod_inter = ${cod_inter} AND cod_prod_origen IS NOT NULL
             `;
 
             console.log(`✅ Propuesta ${cod_inter} aceptada exitosamente`);
@@ -549,7 +547,7 @@ export async function reject_exchange_proposal(cod_inter: number, cod_us: number
         return await prisma.$transaction(async (tx) => {
             // 1. Verificar que el intercambio existe y está pendiente
             const intercambioData: any[] = await tx.$queryRaw`
-                SELECT cod_inter, cod_us_2, estado_inter
+                SELECT cod_inter, cod_us_1, cod_us_2, estado_inter
                 FROM intercambio
                 WHERE cod_inter = ${cod_inter}
             `;
@@ -571,10 +569,12 @@ export async function reject_exchange_proposal(cod_inter: number, cod_us: number
             }
 
             // 4. Marcar en historial como rechazado (se mantiene en intercambio_producto)
+            // IMPORTANTE: Guardamos el usuario origen en cod_us_origen para que le aparezca en su historial
             await tx.$queryRaw`
                 UPDATE intercambio_producto
-                SET estado_inter = 'no_satisfactorio'::"TransactionState"
-                WHERE cod_inter = ${cod_inter}
+                SET estado_inter = 'no_satisfactorio'::"TransactionState",
+                    cod_us_origen = ${intercambio.cod_us_1}
+                WHERE cod_inter = ${cod_inter} AND cod_prod_origen IS NOT NULL
             `;
 
             // 5. Resetear intercambio a estado abierto (vuelve a estar disponible)
@@ -587,11 +587,30 @@ export async function reject_exchange_proposal(cod_inter: number, cod_us: number
                 WHERE cod_inter = ${cod_inter}
             `;
 
-            // 6. Resetear producto origen en intercambio_producto
+            // 6. Crear NUEVA fila en intercambio_producto para el estado abierto
+            // Necesitamos saber el producto destino original
+            const prodDestinoData: any[] = await tx.$queryRaw`
+                SELECT cod_prod_destino 
+                FROM intercambio_producto 
+                WHERE cod_inter = ${cod_inter} 
+                LIMIT 1
+            `;
+            const cod_prod_destino = prodDestinoData[0]?.cod_prod_destino;
+
             await tx.$queryRaw`
-                UPDATE intercambio_producto
-                SET cod_prod_origen = NULL
-                WHERE cod_inter = ${cod_inter}
+                INSERT INTO intercambio_producto (
+                    cod_inter,
+                    cod_prod_origen,
+                    cod_prod_destino,
+                    estado_inter,
+                    cod_us_origen
+                ) VALUES (
+                    ${cod_inter},
+                    NULL,
+                    ${cod_prod_destino},
+                    NULL,
+                    NULL
+                )
             `;
 
             console.log(`✅ Propuesta ${cod_inter} rechazada (historial guardado) y vuelta a estado abierto`);

@@ -127,3 +127,88 @@ export async function getAllActiveServicePosts(req: Request, res: Response) {
         });
     }
 }
+
+export async function getExploreProducts(req: Request, res: Response) {
+    try {
+        const products = await PostService.get_explore_products() as any[];
+
+        if (!products || products.length === 0) {
+            return res.status(200).json({
+                success: true,
+                message: 'No hay productos disponibles',
+                data: []
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Productos obtenidos correctamente',
+            data: products
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener productos',
+            error: (err as Error).message
+        });
+    }
+}
+
+export async function getExploreServices(req: Request, res: Response) {
+    try {
+        const services = await PostService.get_explore_services() as any[];
+
+        if (!services || services.length === 0) {
+            return res.status(200).json({
+                success: true,
+                message: 'No hay servicios disponibles',
+                data: []
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Servicios obtenidos correctamente',
+            data: services
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener servicios',
+            error: (err as Error).message
+        });
+    }
+}
+
+export async function getPostImage(req: Request, res: Response) {
+    try {
+        const { cod_pub } = req.params;
+
+        if (!cod_pub) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de publicación requerido'
+            });
+        }
+
+        const post = await PostService.get_post_by_id(cod_pub) as any;
+
+        // FORZAR IMAGEN POR DEFECTO SIEMPRE
+        // Ignoramos la imagen de la BD porque son datos aleatorios/corruptos
+        res.set('Content-Type', 'image/jpeg');
+        return res.send(image_buffer);
+
+    } catch (err) {
+        console.error('Error serving image:', err);
+        // En caso de error, también intentamos devolver la imagen por defecto
+        try {
+            res.set('Content-Type', 'image/jpeg');
+            return res.send(image_buffer);
+        } catch (e) {
+            return res.status(500).json({
+                success: false,
+                message: 'Error al obtener la imagen'
+            });
+        }
+    }
+}

@@ -301,8 +301,6 @@ export async function get_complete_transaction_history_by_month(month: string) {
         throw new Error((err as Error).message)
     }
 }
-<<<<<<< HEAD
-=======
 
 export async function getPendingCollections(cod_us: number) {
     try {
@@ -396,4 +394,3 @@ export async function confirmPayment(cod_us: number, cod_escrow: number) {
         throw new Error((err as Error).message);
     }
 }
->>>>>>> origin/test/resportes

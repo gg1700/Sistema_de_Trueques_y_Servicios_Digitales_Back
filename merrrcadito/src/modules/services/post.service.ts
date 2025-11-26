@@ -47,7 +47,8 @@ export async function get_post_by_id(cod_pub: string) {
         const post = await prisma.$queryRaw`
             SELECT 
                 p.cod_pub,
-                p.contenido as titulo_pub
+                p.contenido as titulo_pub,
+                p.foto_pub
             FROM publicacion p
             WHERE p.cod_pub = ${cod_pub}::INTEGER
             LIMIT 1
@@ -65,6 +66,28 @@ export async function get_all_active_service_posts() {
             SELECT * FROM sp_obtenerpublicacionesservicio()
         `;
         return posts;
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}
+
+export async function get_explore_products() {
+    try {
+        const products = await prisma.$queryRaw`
+            SELECT * FROM sp_explorarproductos()
+        `;
+        return products;
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}
+
+export async function get_explore_services() {
+    try {
+        const services = await prisma.$queryRaw`
+            SELECT * FROM sp_explorarservicios()
+        `;
+        return services;
     } catch (err) {
         throw new Error((err as Error).message);
     }

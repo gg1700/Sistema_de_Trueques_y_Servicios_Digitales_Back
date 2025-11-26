@@ -68,12 +68,12 @@ export async function create_exchange(data: CreateExchangeData) {
                     foto_inter,
                     impacto_amb_inter
                 ) VALUES (
-                    ${data.cod_us_1},
+                    NULL,
                     ${data.cod_us_1}, 
+                    0,
+                    NULL,
                     ${data.cant_prod_origen},
                     ${data.unidad_medida_origen},
-                    0,
-                    'N/A',
                     ${data.foto_inter || null}::bytea,
                     ${impacto_amb_inter}
                 )
@@ -94,7 +94,7 @@ export async function create_exchange(data: CreateExchangeData) {
                     cod_prod_destino
                 ) VALUES (
                     ${cod_inter},
-                    ${cod_prod_nuevo},
+                    NULL,
                     ${cod_prod_nuevo}
                 )
             `;
@@ -162,11 +162,11 @@ export async function get_user_exchanges(cod_us: number) {
         // Usamos LEFT JOIN para todo para asegurar que traemos el intercambio aunque falten datos relacionados
         // NOTA: Se han eliminado fecha_inter y estado_inter del SELECT porque no existen en la tabla
         const exchanges: any[] = await prisma.$queryRaw`
-            SELECT 
+            SELECT DISTINCT ON (i.cod_inter)
                 i.cod_inter,
                 i.cod_us_1,
                 i.cod_us_2,
-                u2.nom_us as nombre_usuario_2,
+                u2.nom_us || ' ' || u2.ap_pat_us || COALESCE(' ' || u2.ap_mat_us, '') as nombre_usuario_2,
                 u2.handle_name as handle_name_2,
                 i.cant_prod_origen,
                 i.unidad_medida_origen,
@@ -174,8 +174,9 @@ export async function get_user_exchanges(cod_us: number) {
                 i.unidad_medida_destino,
                 i.impacto_amb_inter,
                 i.foto_inter,
+                i.estado_inter,
                 ip.fecha_inter,
-                ip.estado_inter,
+                ip.estado_inter as estado_inter_producto,
                 ip.cod_prod_origen,
                 p1.nom_prod as nombre_prod_origen,
                 ip.cod_prod_destino,
@@ -269,7 +270,7 @@ export async function proposeExchange(data: {
         return await prisma.$transaction(async (tx) => {
             // 1. Verificar que el intercambio existe
             const intercambioData: any[] = await tx.$queryRaw`
-                SELECT cod_inter, cod_us_1, cod_us_2, cant_prod_origen, unidad_medida_origen
+                SELECT cod_inter, cod_us_1, cod_us_2
                 FROM intercambio
                 WHERE cod_inter = ${data.cod_inter}
             `;
@@ -281,12 +282,12 @@ export async function proposeExchange(data: {
             const intercambio = intercambioData[0];
 
             // 2. Validar que el usuario no esté proponiendo a su propio intercambio
-            // if (intercambio.cod_us_1 === data.cod_us_2) {
-            //     throw new Error('No puedes proponer un producto a tu propio intercambio.');
-            // }
+            if (intercambio.cod_us_2 === data.cod_us_2) {
+                throw new Error('No puedes proponer un producto a tu propio intercambio.');
+            }
 
-            // 3. Validar que el intercambio no tenga ya una propuesta aceptada
-            if (intercambio.cod_us_2 !== intercambio.cod_us_1) {
+            // 3. Validar que el intercambio esté disponible (cod_us_1 debe ser NULL)
+            if (intercambio.cod_us_1 !== null) {
                 throw new Error('Este intercambio ya tiene una propuesta activa.');
             }
 
@@ -320,19 +321,19 @@ export async function proposeExchange(data: {
                 throw new Error('Error al crear el producto propuesto');
             }
 
-            // 5. Actualizar intercambio: El que propone pasa a ser el ORIGEN (cod_us_1)
-            // Y el creador (que estaba en cod_us_1) pasa a ser el DESTINO (cod_us_2)
+            // 5. Actualizar intercambio: El que propone se convierte en el ORIGEN (cod_us_1)
+            // El creador YA ESTÁ en el DESTINO (cod_us_2), así que no se toca.
+            // Establecer estado como 'pendiente'
             await tx.$queryRaw`
                 UPDATE intercambio
                 SET cod_us_1 = ${data.cod_us_2},
                     cant_prod_origen = ${data.cant_prod_destino},
                     unidad_medida_origen = ${data.unidad_medida_destino},
-                    cant_prod_destino = ${intercambio.cant_prod_origen},
-                    unidad_medida_destino = ${intercambio.unidad_medida_origen}
+                    estado_inter = 'pendiente'::"ExchangeState"
                 WHERE cod_inter = ${data.cod_inter}
             `;
 
-            // 6. Actualizar intercambio_producto: El producto propuesto pasa a ser el ORIGEN
+            // 6. Actualizar intercambio_producto: El producto propuesto se asigna al ORIGEN
             await tx.$queryRaw`
                 UPDATE intercambio_producto
                 SET cod_prod_origen = ${cod_prod_propuesto}
@@ -371,20 +372,21 @@ export async function get_all_open_exchanges() {
                     i.cod_inter,
                     i.cod_us_1,
                     i.cod_us_2,
-                    i.cant_prod_origen,
-                    i.unidad_medida_origen,
+                    i.cant_prod_destino as cant_prod_origen,
+                    i.unidad_medida_destino as unidad_medida_origen,
                     i.impacto_amb_inter,
                     i.foto_inter,
                     ip.fecha_inter,
                     ip.estado_inter,
-                    p_origen.nom_prod as nombre_prod_origen,
-                p_origen.desc_prod as desc_prod,
-                u1.nom_us || ' ' || u1.ap_pat_us as nombre_usuario_1,
-                    u1.handle_name as handle_name_1
+                    p_destino.nom_prod as nombre_prod_origen,
+                    p_destino.desc_prod as desc_prod,
+                    u2.nom_us || ' ' || u2.ap_pat_us as nombre_usuario_1,
+                    u2.handle_name as handle_name_1
                 FROM intercambio i
                 INNER JOIN intercambio_producto ip ON i.cod_inter = ip.cod_inter
-                LEFT JOIN producto p_origen ON ip.cod_prod_origen = p_origen.cod_prod
-                LEFT JOIN usuario u1 ON i.cod_us_1 = u1.cod_us
+                LEFT JOIN producto p_destino ON ip.cod_prod_destino = p_destino.cod_prod
+                LEFT JOIN usuario u2 ON i.cod_us_2 = u2.cod_us
+                WHERE i.cod_us_1 IS NULL
                 ORDER BY ip.fecha_inter DESC
             `;
 
@@ -428,4 +430,163 @@ export async function get_all_open_exchanges() {
     // Si llegamos aquí, todos los intentos fallaron
     console.error('❌ Todos los intentos fallaron');
     throw new Error(lastError?.message || 'Error al obtener intercambios después de varios intentos');
+}
+
+// Obtener solicitudes de intercambio pendientes (para el usuario destino/ofertante)
+export async function get_pending_exchange_requests(cod_us: number) {
+    try {
+        console.log(`Obteniendo solicitudes pendientes para usuario ${cod_us}`);
+
+        const pendingRequests: any[] = await prisma.$queryRaw`
+            SELECT 
+                i.cod_inter,
+                i.cod_us_1,
+                i.cod_us_2,
+                i.cant_prod_origen,
+                i.unidad_medida_origen,
+                i.cant_prod_destino,
+                i.unidad_medida_destino,
+                i.impacto_amb_inter,
+                i.foto_inter,
+                i.estado_inter,
+                u1.nom_us || ' ' || u1.ap_pat_us || COALESCE(' ' || u1.ap_mat_us, '') as nombre_usuario_origen,
+                u1.handle_name as handle_name_origen,
+                p_origen.nom_prod as nombre_prod_origen,
+                p_destino.nom_prod as nombre_prod_destino,
+                ip.fecha_inter
+            FROM intercambio i
+            INNER JOIN usuario u1 ON i.cod_us_1 = u1.cod_us
+            INNER JOIN intercambio_producto ip ON i.cod_inter = ip.cod_inter
+            LEFT JOIN producto p_origen ON ip.cod_prod_origen = p_origen.cod_prod
+            LEFT JOIN producto p_destino ON ip.cod_prod_destino = p_destino.cod_prod
+            WHERE i.cod_us_2 = ${cod_us} 
+            AND i.estado_inter = 'pendiente'
+            ORDER BY ip.fecha_inter DESC
+        `;
+
+        const processedRequests = pendingRequests.map(req => ({
+            ...req,
+            tiene_foto: req.foto_inter !== null && req.foto_inter !== undefined,
+            foto_inter: undefined,
+            fecha_inter: req.fecha_inter ? new Date(req.fecha_inter).toISOString() : new Date().toISOString()
+        }));
+
+        console.log(`✅ Encontradas ${processedRequests.length} solicitudes pendientes`);
+        return processedRequests;
+    } catch (err) {
+        console.error('Error en get_pending_exchange_requests:', err);
+        throw new Error((err as Error).message);
+    }
+}
+
+// Aceptar una propuesta de intercambio
+export async function accept_exchange_proposal(cod_inter: number, cod_us: number) {
+    try {
+        console.log(`Usuario ${cod_us} aceptando propuesta de intercambio ${cod_inter}`);
+
+        return await prisma.$transaction(async (tx) => {
+            // 1. Verificar que el intercambio existe y está pendiente
+            const intercambioData: any[] = await tx.$queryRaw`
+                SELECT cod_inter, cod_us_2, estado_inter
+                FROM intercambio
+                WHERE cod_inter = ${cod_inter}
+            `;
+
+            if (!intercambioData || intercambioData.length === 0) {
+                throw new Error('Intercambio no encontrado.');
+            }
+
+            const intercambio = intercambioData[0];
+
+            // 2. Validar que solo el usuario destino puede aceptar
+            if (intercambio.cod_us_2 !== cod_us) {
+                throw new Error('No tienes permiso para aceptar esta propuesta.');
+            }
+
+            // 3. Validar que el estado sea pendiente
+            if (intercambio.estado_inter !== 'pendiente') {
+                throw new Error('Esta propuesta no está pendiente.');
+            }
+
+            // 4. Actualizar estado a satisfactorio
+            await tx.$queryRaw`
+                UPDATE intercambio
+                SET estado_inter = 'satisfactorio'::"ExchangeState"
+                WHERE cod_inter = ${cod_inter}
+            `;
+
+            // 5. Actualizar estado en intercambio_producto
+            await tx.$queryRaw`
+                UPDATE intercambio_producto
+                SET estado_inter = 'satisfactorio'::"TransactionState"
+                WHERE cod_inter = ${cod_inter}
+            `;
+
+            console.log(`✅ Propuesta ${cod_inter} aceptada exitosamente`);
+
+            return {
+                success: true,
+                message: 'Propuesta de intercambio aceptada exitosamente'
+            };
+        });
+    } catch (err) {
+        console.error('Error en accept_exchange_proposal:', err);
+        throw new Error((err as Error).message);
+    }
+}
+
+// Rechazar una propuesta de intercambio y volver a estado abierto
+export async function reject_exchange_proposal(cod_inter: number, cod_us: number) {
+    try {
+        console.log(`Usuario ${cod_us} rechazando propuesta de intercambio ${cod_inter}`);
+
+        return await prisma.$transaction(async (tx) => {
+            // 1. Verificar que el intercambio existe y está pendiente
+            const intercambioData: any[] = await tx.$queryRaw`
+                SELECT cod_inter, cod_us_2, estado_inter
+                FROM intercambio
+                WHERE cod_inter = ${cod_inter}
+            `;
+
+            if (!intercambioData || intercambioData.length === 0) {
+                throw new Error('Intercambio no encontrado.');
+            }
+
+            const intercambio = intercambioData[0];
+
+            // 2. Validar que solo el usuario destino puede rechazar
+            if (intercambio.cod_us_2 !== cod_us) {
+                throw new Error('No tienes permiso para rechazar esta propuesta.');
+            }
+
+            // 3. Validar que el estado sea pendiente
+            if (intercambio.estado_inter !== 'pendiente') {
+                throw new Error('Esta propuesta no está pendiente.');
+            }
+
+            // 4. Actualizar estado a rechazado (NO resetear cod_us_1 para mantener en historial)
+            await tx.$queryRaw`
+                UPDATE intercambio
+                SET estado_inter = 'no_satisfactorio'::"ExchangeState"
+                WHERE cod_inter = ${cod_inter}
+            `;
+
+            // 5. Actualizar estado en intercambio_producto
+            await tx.$queryRaw`
+                UPDATE intercambio_producto
+                SET estado_inter = 'no_satisfactorio'::"TransactionState"
+                WHERE cod_inter = ${cod_inter}
+            `;
+
+            console.log(`✅ Propuesta ${cod_inter} rechazada y marcada en historial`);
+
+            return {
+                success: true,
+                message: 'Propuesta rechazada.'
+            };
+        });
+    } catch (err) {
+        console.error('Error en reject_exchange_proposal:', err);
+        throw new Error((err as Error).message);
+    }
 }

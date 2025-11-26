@@ -233,3 +233,81 @@ export async function getAllOpenExchanges(req: Request, res: Response) {
         });
     }
 }
+
+export async function getPendingExchangeRequests(req: Request, res: Response) {
+    try {
+        const { cod_us } = req.query;
+
+        if (!cod_us) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de usuario requerido'
+            });
+        }
+
+        const pendingRequests = await ExchangeService.get_pending_exchange_requests(parseInt(cod_us as string));
+
+        return res.status(200).json({
+            success: true,
+            message: 'Solicitudes pendientes obtenidas exitosamente',
+            data: pendingRequests
+        });
+    } catch (error) {
+        console.error('Error en getPendingExchangeRequests:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener las solicitudes pendientes',
+            error: (error as Error).message
+        });
+    }
+}
+
+export async function acceptExchangeProposal(req: Request, res: Response) {
+    try {
+        const { cod_inter } = req.params;
+        const { cod_us } = req.body;
+
+        if (!cod_inter || !cod_us) {
+            return res.status(400).json({
+                success: false,
+                message: 'Faltan datos requeridos'
+            });
+        }
+
+        const result = await ExchangeService.accept_exchange_proposal(parseInt(cod_inter), cod_us);
+
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error('Error en acceptExchangeProposal:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al aceptar la propuesta',
+            error: (error as Error).message
+        });
+    }
+}
+
+export async function rejectExchangeProposal(req: Request, res: Response) {
+    try {
+        const { cod_inter } = req.params;
+        const { cod_us } = req.body;
+
+        if (!cod_inter || !cod_us) {
+            return res.status(400).json({
+                success: false,
+                message: 'Faltan datos requeridos'
+            });
+        }
+
+        const result = await ExchangeService.reject_exchange_proposal(parseInt(cod_inter), cod_us);
+
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error('Error en rejectExchangeProposal:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al rechazar la propuesta',
+            error: (error as Error).message
+        });
+    }
+}

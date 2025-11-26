@@ -17,6 +17,9 @@ router.get('/get_user_exchange_history', ExchangeController.getUserExchangeHisto
 // Obtener todos los intercambios abiertos
 router.get('/open', ExchangeController.getAllOpenExchanges);
 
+// Obtener solicitudes de intercambio pendientes (para usuario destino)
+router.get('/pending', ExchangeController.getPendingExchangeRequests);
+
 // Obtener intercambios de un usuario
 router.get('/user/:cod_us', ExchangeController.getUserExchanges);
 
@@ -25,5 +28,11 @@ router.get('/:cod_inter/image', ExchangeController.getExchangeImage);
 
 // Proponer un producto para un intercambio
 router.post('/:cod_inter/propose', upload.single('foto_prod'), ExchangeController.proposeExchange);
+
+// Aceptar una propuesta de intercambio
+router.post('/:cod_inter/accept', ExchangeController.acceptExchangeProposal);
+
+// Rechazar una propuesta de intercambio
+router.post('/:cod_inter/reject', ExchangeController.rejectExchangeProposal);
 
 export default router;

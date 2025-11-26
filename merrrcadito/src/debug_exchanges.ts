@@ -29,6 +29,7 @@ async function main() {
         FROM intercambio i
         LEFT JOIN intercambio_producto ip ON i.cod_inter = ip.cod_inter
         LEFT JOIN producto p ON ip.cod_prod_origen = p.cod_prod
+        WHERE i.cod_inter = 13
         ORDER BY i.cod_inter DESC
     `;
 

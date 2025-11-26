@@ -2,11 +2,16 @@ import { Router } from 'express';
 import multer from 'multer';
 import * as UserController from '../controllers/user.controller';
 import * as EntrepreneurController from '../controllers/entrepreneur.controller';
+import { getAllUsers, getUserProducts } from '../controllers/user_exchange_helpers';
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 const router = Router();
+
+// New routes for exchange form - MUST be before /:id/image
+router.get('/all', getAllUsers);
+router.get('/:userId/products', getUserProducts);
 
 router.get('/activity_report_by_week', UserController.getUsersActivityReportByWeek);
 

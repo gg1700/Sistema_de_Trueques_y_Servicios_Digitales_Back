@@ -110,3 +110,20 @@ export async function getPostById(req: Request, res: Response) {
         });
     }
 }
+
+export async function getAllActiveServicePosts(req: Request, res: Response) {
+    try {
+        const active_service_posts = await PostService.get_all_active_service_posts();
+        return res.status(200).json({
+            success: true,
+            message: 'Publicaciones de servicios activos obtenidos exitosamente.',
+            data: active_service_posts
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener publicaciones de servicios activos.',
+            error: error.message
+        });
+    }
+}

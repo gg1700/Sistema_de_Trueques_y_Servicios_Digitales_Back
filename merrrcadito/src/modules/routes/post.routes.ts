@@ -8,7 +8,10 @@ const upload = multer({ storage: storage });
 
 router.post('/create', upload.single('foto_pub'), PostController.createPost);
 
+
 router.get('/all_active_product_posts', PostController.getAllActiveProductPosts);
+router.get('/all_active_service_posts', PostController.getAllActiveServicePosts);
+
 
 router.get('/:cod_pub', PostController.getPostById);
 

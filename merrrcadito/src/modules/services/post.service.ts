@@ -58,3 +58,14 @@ export async function get_post_by_id(cod_pub: string) {
         throw new Error((err as Error).message);
     }
 }
+
+export async function get_all_active_service_posts() {
+    try {
+        const posts = await prisma.$queryRaw`
+            SELECT * FROM sp_obtenerpublicacionesservicio()
+        `;
+        return posts;
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}

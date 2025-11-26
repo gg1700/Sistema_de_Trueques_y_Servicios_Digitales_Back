@@ -291,3 +291,32 @@ export async function getBoostersMonetizationReport(req: Request, res: Response)
         });
     }
 }
+
+// =========================================
+// IMPACTO AMBIENTAL DE USUARIO INDIVIDUAL
+// =========================================
+export async function getUserEnvironmentalImpact(req: Request, res: Response) {
+    try {
+        const { cod_us } = req.params;
+        if (!cod_us) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de usuario es requerido.'
+            });
+        }
+        const impact = await UserService.get_user_environmental_impact(
+            parseInt(cod_us)
+        );
+        return res.status(200).json({
+            success: true,
+            message: 'Impacto ambiental del usuario obtenido exitosamente.',
+            data: impact
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener el impacto ambiental del usuario.',
+            error: (err as Error).message
+        });
+    }
+}

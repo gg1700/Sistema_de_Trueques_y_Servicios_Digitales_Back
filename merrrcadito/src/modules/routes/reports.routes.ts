@@ -33,4 +33,7 @@ router.get('/ratings_satisfaction', ReportsController.getRatingsSatisfactionRepo
 // REPORTE 10: Potenciadores y Monetización
 router.get('/boosters_monetization', ReportsController.getBoostersMonetizationReport);
 
+// IMPACTO AMBIENTAL DE USUARIO INDIVIDUAL
+router.get('/user/:cod_us/environmental-impact', ReportsController.getUserEnvironmentalImpact);
+
 export default router;

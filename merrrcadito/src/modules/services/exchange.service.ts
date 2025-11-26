@@ -188,7 +188,7 @@ export async function get_user_exchanges(cod_us: number) {
             LEFT JOIN intercambio_producto ip ON i.cod_inter = ip.cod_inter
             LEFT JOIN producto p1 ON ip.cod_prod_origen = p1.cod_prod
             LEFT JOIN producto p2 ON ip.cod_prod_destino = p2.cod_prod
-            WHERE (i.cod_us_1 = ${cod_us} OR (ip.estado_inter = 'no_satisfactorio' AND i.cod_us_2 = ${cod_us}))
+            WHERE i.cod_us_1 = ${cod_us}
             ORDER BY i.cod_inter DESC, COALESCE(ip.estado_inter::text, 'pendiente'), ip.fecha_inter DESC
         `;
 
@@ -444,7 +444,7 @@ export async function get_pending_exchange_requests(cod_us: number) {
         console.log(`Obteniendo solicitudes pendientes para usuario ${cod_us}`);
 
         const pendingRequests: any[] = await prisma.$queryRaw`
-            SELECT 
+            SELECT DISTINCT ON (i.cod_inter)
                 i.cod_inter,
                 i.cod_us_1,
                 i.cod_us_2,
@@ -467,7 +467,7 @@ export async function get_pending_exchange_requests(cod_us: number) {
             LEFT JOIN producto p_destino ON ip.cod_prod_destino = p_destino.cod_prod
             WHERE i.cod_us_2 = ${cod_us} 
             AND i.estado_inter = 'pendiente'
-            ORDER BY ip.fecha_inter DESC
+            ORDER BY i.cod_inter, ip.fecha_inter DESC
         `;
 
         const processedRequests = pendingRequests.map(req => ({

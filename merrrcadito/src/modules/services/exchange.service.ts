@@ -176,7 +176,6 @@ export async function get_user_exchanges(cod_us: number) {
                 i.foto_inter,
                 i.estado_inter,
                 ip.fecha_inter,
-                ip.estado_inter as estado_inter_producto,
                 ip.cod_prod_origen,
                 p1.nom_prod as nombre_prod_origen,
                 ip.cod_prod_destino,
@@ -377,7 +376,7 @@ export async function get_all_open_exchanges() {
                     i.impacto_amb_inter,
                     i.foto_inter,
                     ip.fecha_inter,
-                    ip.estado_inter,
+                    i.estado_inter,
                     p_destino.nom_prod as nombre_prod_origen,
                     p_destino.desc_prod as desc_prod,
                     u2.nom_us || ' ' || u2.ap_pat_us as nombre_usuario_1,
@@ -409,7 +408,7 @@ export async function get_all_open_exchanges() {
                 impacto_amb_inter: Number(ex.impacto_amb_inter || 0),
                 tiene_foto: ex.foto_inter !== null && ex.foto_inter !== undefined,
                 fecha_inter: ex.fecha_inter ? new Date(ex.fecha_inter).toISOString() : new Date().toISOString(),
-                estado_inter: ex.estado_inter || 'no_satisfactorio'
+                estado_inter: ex.estado_inter || 'pendiente'
             }));
 
             console.log(`✅ Encontrados ${processedExchanges.length} intercambios abiertos`);

@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+//servicio para registrar accesos
 export async function register_access(cod_us: string, contra_acc: string) {
     try {
         const password_us = await prisma.$queryRaw`
@@ -12,8 +13,8 @@ export async function register_access(cod_us: string, contra_acc: string) {
         const { contra_us } = password;
         let estado_acc = null;
         if (contra_us !== contra_acc) {
-            estado_acc = 'no_exitoso';    
-        }else{
+            estado_acc = 'no_exitoso';
+        } else {
             estado_acc = 'exitoso';
         }
         await prisma.$queryRaw`
@@ -24,7 +25,7 @@ export async function register_access(cod_us: string, contra_acc: string) {
             )
         `;
         return { success: true, message: "Acceso registrado correctamente" };
-    }catch (err) {
+    } catch (err) {
         throw new Error((err as Error).message);
     }
 }
@@ -39,7 +40,7 @@ export async function register_logout(cod_us: string) {
             )
         `;
         return { success: true, message: "Cierre de sesión registrado correctamente" };
-    }catch (err) {
+    } catch (err) {
         throw new Error((err as Error).message);
     }
 }
@@ -51,14 +52,14 @@ interface AccessInfo {
     contra_acc: string
 }
 
-export async function get_complete_access_history_by_month (month: string) {
+export async function get_complete_access_history_by_month(month: string) {
     try {
-        const access_history : AccessInfo[] = await prisma.$queryRaw`
+        const access_history: AccessInfo[] = await prisma.$queryRaw`
             SELECT * FROM sp_obtenerhistorialaccesoscompletomes(
                 ${month}::INTEGER
             )
         `;
-        const filtered_access_history : AccessInfo[] = []
+        const filtered_access_history: AccessInfo[] = []
         for (const access of access_history) {
             const filtered_transaction = Object.fromEntries(
                 Object.entries(access).filter(([_, v]) => v !== null)

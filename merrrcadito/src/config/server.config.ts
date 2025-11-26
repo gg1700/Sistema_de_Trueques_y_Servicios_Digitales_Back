@@ -9,6 +9,5 @@ app.use(cors());
 app.use(express.json());
 app.use(AppRoutes);
 app.use(TransactionRoutes);
-app.use(ExchangeRoutes);
 
 export default app;

@@ -282,14 +282,14 @@ export async function get_user_transaction_history(cod_us: string) {
     }
 }
 
-export async function get_complete_transaction_history_by_month (month: string) {
+export async function get_complete_transaction_history_by_month(month: string) {
     try {
-        const transaction_history : TransactionInfo[] = await prisma.$queryRaw`
+        const transaction_history: TransactionInfo[] = await prisma.$queryRaw`
             SELECT * FROM sp_obtenerhistorialtransaccionescompletomes(
                 ${month}::INTEGER
             )
         `;
-        const filtered_transaction_history : TransactionInfo[] = []
+        const filtered_transaction_history: TransactionInfo[] = []
         for (const transaction of transaction_history) {
             const filtered_transaction = Object.fromEntries(
                 Object.entries(transaction).filter(([_, v]) => v !== null)
@@ -301,3 +301,99 @@ export async function get_complete_transaction_history_by_month (month: string) 
         throw new Error((err as Error).message)
     }
 }
+<<<<<<< HEAD
+=======
+
+export async function getPendingCollections(cod_us: number) {
+    try {
+        // Consultar todos los escrows donde el usuario es el destino de la transacción
+        const pendingCollections: any[] = await prisma.$queryRaw`
+            SELECT 
+                e.cod_escrow,
+                e.monto_pagado,
+                e.monto_comision,
+                e.estado_escrow,
+                t.cod_trans,
+                t.fecha_trans,
+                t.moneda,
+                t.desc_trans,
+                u_origen.nom_us,
+                u_origen.ap_pat_us,
+                u_origen.ap_mat_us,
+                u_origen.handle_name as handle_origen,
+                u_origen.foto_us as foto_origen
+            FROM escrow e
+            INNER JOIN transaccion t ON e.cod_trans = t.cod_trans
+            INNER JOIN usuario u_origen ON t.cod_us_origen = u_origen.cod_us
+            WHERE t.cod_us_destino = ${cod_us}
+            ORDER BY t.fecha_trans DESC
+        `;
+
+        // Procesar resultados (ej. convertir BigInt a Number si es necesario, manejar fotos)
+        const processedCollections = pendingCollections.map(collection => ({
+            ...collection,
+            nombre_origen: `${collection.nom_us} ${collection.ap_pat_us} ${collection.ap_mat_us || ''}`.trim(),
+            foto_origen: undefined, // No enviar bytea
+            tiene_foto: collection.foto_origen !== null
+        }));
+
+        return processedCollections;
+    } catch (err) {
+        console.error('Error en getPendingCollections:', err);
+        throw new Error((err as Error).message);
+    }
+}
+
+export async function confirmPayment(cod_us: number, cod_escrow: number) {
+    try {
+        return await prisma.$transaction(async (tx) => {
+            // 1. Verificar que el escrow existe, está retenido y pertenece al usuario (como destino)
+            const escrowData: any[] = await tx.$queryRaw`
+                SELECT e.cod_escrow, e.monto_pagado, e.monto_pagado_bs, e.estado_escrow, t.cod_us_destino
+                FROM escrow e
+                INNER JOIN transaccion t ON e.cod_trans = t.cod_trans
+                WHERE e.cod_escrow = ${cod_escrow}::INTEGER
+            `;
+
+            if (!escrowData || escrowData.length === 0) {
+                throw new Error('Escrow no encontrado.');
+            }
+
+            const escrow = escrowData[0];
+
+            if (escrow.cod_us_destino !== cod_us) {
+                throw new Error('No tienes permiso para liberar este pago.');
+            }
+
+            if (escrow.estado_escrow !== 'retenido') {
+                throw new Error('El pago no está en estado retenido.');
+            }
+
+            // 2. Actualizar estado del escrow a 'liberado'
+            await tx.$queryRaw`
+                UPDATE escrow
+                SET estado_escrow = 'liberado'::"EscrowState"
+                WHERE cod_escrow = ${cod_escrow}::INTEGER
+            `;
+
+            // 3. Actualizar saldo de la billetera del usuario destino
+            // Se asume que monto_pagado es CV (saldo_actual) y monto_pagado_bs es Bs (saldo_real).
+            // Si son nulos, se tratan como 0.
+            const montoCV = Number(escrow.monto_pagado || 0);
+            const montoBs = Number(escrow.monto_pagado_bs || 0);
+
+            await tx.$queryRaw`
+                UPDATE billetera
+                SET saldo_actual = saldo_actual + ${montoCV}::DECIMAL,
+                    saldo_real = saldo_real + ${montoBs}::DECIMAL
+                WHERE cod_us = ${cod_us}::INTEGER
+            `;
+
+            return { success: true, message: 'Pago recibido y liberado correctamente.' };
+        });
+    } catch (err) {
+        console.error('Error en confirmPayment:', err);
+        throw new Error((err as Error).message);
+    }
+}
+>>>>>>> origin/test/resportes

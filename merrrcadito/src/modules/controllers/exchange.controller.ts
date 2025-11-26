@@ -1,4 +1,6 @@
 import { Request, Response } from "express";
+import path from 'path';
+import fs from 'fs';
 import * as ExchangeService from "../services/exchange.service";
 import { ImageService } from "../services/image.service";
 
@@ -142,6 +144,12 @@ export async function getExchangeImage(req: Request, res: Response) {
         const image = await ExchangeService.get_exchange_image(parseInt(cod_inter));
 
         if (!image) {
+            const defaultImagePath = path.join(__dirname, '../../images/default_image.jpg');
+            if (fs.existsSync(defaultImagePath)) {
+                res.setHeader('Content-Type', 'image/jpeg');
+                return res.sendFile(defaultImagePath);
+            }
+
             return res.status(404).json({
                 success: false,
                 message: 'Imagen no encontrada'
@@ -155,6 +163,72 @@ export async function getExchangeImage(req: Request, res: Response) {
         return res.status(500).json({
             success: false,
             message: 'Error al obtener la imagen del intercambio',
+            error: (error as Error).message
+        });
+    }
+}
+
+export async function proposeExchange(req: Request, res: Response) {
+    try {
+        const { cod_inter } = req.params;
+        const {
+            cod_us_2,
+            nom_prod,
+            peso_prod,
+            marca_prod,
+            cod_subcat_prod,
+            calidad_prod,
+            desc_prod,
+            cant_prod_destino,
+            unidad_medida_destino
+        } = req.body;
+
+        if (!cod_inter || !cod_us_2 || !nom_prod) {
+            return res.status(400).json({
+                success: false,
+                message: 'Faltan datos requeridos'
+            });
+        }
+
+        const result = await ExchangeService.proposeExchange({
+            cod_inter: parseInt(cod_inter),
+            cod_us_2,
+            nom_prod,
+            peso_prod: parseFloat(peso_prod) || 0,
+            marca_prod: marca_prod || '',
+            cod_subcat_prod: parseInt(cod_subcat_prod),
+            calidad_prod,
+            desc_prod: desc_prod || '',
+            cant_prod_destino: parseInt(cant_prod_destino),
+            unidad_medida_destino,
+            foto_prod: req.file?.buffer
+        });
+
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error('Error en proposeExchange:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al procesar la propuesta',
+            error: (error as Error).message
+        });
+    }
+}
+
+export async function getAllOpenExchanges(req: Request, res: Response) {
+    try {
+        const exchanges = await ExchangeService.get_all_open_exchanges();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Intercambios abiertos obtenidos exitosamente',
+            data: exchanges
+        });
+    } catch (error) {
+        console.error('Error en getAllOpenExchanges:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener los intercambios abiertos',
             error: (error as Error).message
         });
     }

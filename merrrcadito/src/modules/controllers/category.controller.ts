@@ -86,24 +86,41 @@ export class CategoryController {
   }
 
   /**
-   * Obtener todas las categorías
+   * Obtener todas las categorías CON SUBCATEGORÍAS
    * GET /api/categories
-   * (Ahora llama a sp_getAllCategories)
    */
   static async getAllCategories(req: Request, res: Response) {
     try {
       const { tipo_cat } = req.query;
 
-      // --- CAMBIO PRINCIPAL: LLAMADA A LA FUNCIÓN ---
-      // Usamos $queryRaw para llamar a una FUNCIÓN que devuelve una TABLA
-      const categories = await prisma.$queryRaw`
+      // Get categories using the stored procedure
+      const categories: any[] = await prisma.$queryRaw`
         SELECT * FROM sp_getAllCategories(${tipo_cat as string || null})
       `;
-      // El '|| null' es para pasar NULL al SP si tipo_cat no está definido.
+
+      // For each category, fetch its subcategories
+      const categoriesWithSubcats = await Promise.all(
+        categories.map(async (cat) => {
+          const subcategorias: any[] = await prisma.$queryRaw`
+            SELECT 
+              cod_subcat_prod,
+              nom_subcat_prod,
+              descr_subcat_prod
+            FROM subcategoria_producto
+            WHERE cod_cat = ${cat.cod_cat}
+            ORDER BY nom_subcat_prod
+          `;
+
+          return {
+            ...cat,
+            subcategorias: subcategorias
+          };
+        })
+      );
 
       return res.status(200).json({
         success: true,
-        data: categories,
+        data: categoriesWithSubcats,
       });
 
     } catch (error: any) {

@@ -15,7 +15,7 @@ interface CreateExchangeData {
     foto_inter?: Buffer;
 }
 
-// Crear un nuevo intercambio (Oferta Abierta con creación de producto)
+// Crear un nuevo intercambio (Oferta Abierta con creación de producto).
 export async function create_exchange(data: CreateExchangeData) {
     try {
         console.log('Creando oferta de intercambio y producto:', data);
@@ -247,4 +247,185 @@ export async function get_exchange_image(cod_inter: number) {
         console.error('Error en get_exchange_image:', err);
         throw new Error((err as Error).message);
     }
+}
+
+// Proponer un producto para un intercambio existente
+export async function proposeExchange(data: {
+    cod_inter: number;
+    cod_us_2: number;
+    nom_prod: string;
+    peso_prod: number;
+    marca_prod: string;
+    cod_subcat_prod: number;
+    calidad_prod: string;
+    desc_prod: string;
+    cant_prod_destino: number;
+    unidad_medida_destino: string;
+    foto_prod?: Buffer;
+}) {
+    try {
+        console.log('Proponiendo producto para intercambio:', data.cod_inter);
+
+        return await prisma.$transaction(async (tx) => {
+            // 1. Verificar que el intercambio existe
+            const intercambioData: any[] = await tx.$queryRaw`
+                SELECT cod_inter, cod_us_1, cod_us_2, cant_prod_origen, unidad_medida_origen
+                FROM intercambio
+                WHERE cod_inter = ${data.cod_inter}
+            `;
+
+            if (!intercambioData || intercambioData.length === 0) {
+                throw new Error('Intercambio no encontrado.');
+            }
+
+            const intercambio = intercambioData[0];
+
+            // 2. Validar que el usuario no esté proponiendo a su propio intercambio
+            // if (intercambio.cod_us_1 === data.cod_us_2) {
+            //     throw new Error('No puedes proponer un producto a tu propio intercambio.');
+            // }
+
+            // 3. Validar que el intercambio no tenga ya una propuesta aceptada
+            if (intercambio.cod_us_2 !== intercambio.cod_us_1) {
+                throw new Error('Este intercambio ya tiene una propuesta activa.');
+            }
+
+            // 4. Crear el producto propuesto
+            const productoResult: any[] = await tx.$queryRaw`
+                INSERT INTO producto (
+                    nom_prod,
+                    peso_prod,
+                    marca_prod,
+                    cod_subcat_prod,
+                    calidad_prod,
+                    desc_prod,
+                    precio_prod,
+                    estado_prod
+                ) VALUES (
+                    ${data.nom_prod},
+                    ${data.peso_prod},
+                    ${data.marca_prod},
+                    ${data.cod_subcat_prod},
+                    ${data.calidad_prod}::"ProductQuality",
+                    ${data.desc_prod},
+                    0,
+                    'disponible'::"ProductState"
+                )
+                RETURNING cod_prod
+            `;
+
+            const cod_prod_propuesto = productoResult[0]?.cod_prod;
+
+            if (!cod_prod_propuesto) {
+                throw new Error('Error al crear el producto propuesto');
+            }
+
+            // 5. Actualizar intercambio: El que propone pasa a ser el ORIGEN (cod_us_1)
+            // Y el creador (que estaba en cod_us_1) pasa a ser el DESTINO (cod_us_2)
+            await tx.$queryRaw`
+                UPDATE intercambio
+                SET cod_us_1 = ${data.cod_us_2},
+                    cant_prod_origen = ${data.cant_prod_destino},
+                    unidad_medida_origen = ${data.unidad_medida_destino},
+                    cant_prod_destino = ${intercambio.cant_prod_origen},
+                    unidad_medida_destino = ${intercambio.unidad_medida_origen}
+                WHERE cod_inter = ${data.cod_inter}
+            `;
+
+            // 6. Actualizar intercambio_producto: El producto propuesto pasa a ser el ORIGEN
+            await tx.$queryRaw`
+                UPDATE intercambio_producto
+                SET cod_prod_origen = ${cod_prod_propuesto}
+                WHERE cod_inter = ${data.cod_inter}
+            `;
+
+            console.log(`Propuesta creada para intercambio ${data.cod_inter}, producto: ${cod_prod_propuesto}`);
+
+            return {
+                success: true,
+                message: 'Propuesta de intercambio enviada exitosamente',
+                data: {
+                    cod_inter: data.cod_inter,
+                    cod_prod_propuesto
+                }
+            };
+        });
+
+    } catch (err) {
+        console.error('Error en proposeExchange:', err);
+        throw new Error((err as Error).message);
+    }
+}
+
+// Obtener todos los intercambios abiertos (donde cod_us_1 === cod_us_2)
+export async function get_all_open_exchanges() {
+    const MAX_RETRIES = 3;
+    let lastError: any;
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            console.log(`Obteniendo intercambios abiertos (intento ${attempt}/${MAX_RETRIES})...`);
+
+            const exchanges: any[] = await prisma.$queryRaw`
+                SELECT 
+                    i.cod_inter,
+                    i.cod_us_1,
+                    i.cod_us_2,
+                    i.cant_prod_origen,
+                    i.unidad_medida_origen,
+                    i.impacto_amb_inter,
+                    i.foto_inter,
+                    ip.fecha_inter,
+                    ip.estado_inter,
+                    p_origen.nom_prod as nombre_prod_origen,
+                p_origen.desc_prod as desc_prod,
+                u1.nom_us || ' ' || u1.ap_pat_us as nombre_usuario_1,
+                    u1.handle_name as handle_name_1
+                FROM intercambio i
+                INNER JOIN intercambio_producto ip ON i.cod_inter = ip.cod_inter
+                LEFT JOIN producto p_origen ON ip.cod_prod_origen = p_origen.cod_prod
+                LEFT JOIN usuario u1 ON i.cod_us_1 = u1.cod_us
+                ORDER BY ip.fecha_inter DESC
+            `;
+
+            const uniqueExchanges = exchanges.filter((ex, index, self) =>
+                index === self.findIndex((t) => (
+                    t.cod_inter === ex.cod_inter
+                ))
+            );
+
+            const processedExchanges = uniqueExchanges.map(ex => ({
+                cod_inter: ex.cod_inter,
+                cod_us_1: ex.cod_us_1,
+                cod_us_2: ex.cod_us_2,
+                nombre_prod_origen: ex.nombre_prod_origen,
+                desc_prod: ex.desc_prod,
+                nombre_usuario_1: ex.nombre_usuario_1,
+                handle_name_1: ex.handle_name_1,
+                cant_prod_origen: ex.cant_prod_origen,
+                unidad_medida_origen: ex.unidad_medida_origen,
+                impacto_amb_inter: Number(ex.impacto_amb_inter || 0),
+                tiene_foto: ex.foto_inter !== null && ex.foto_inter !== undefined,
+                fecha_inter: ex.fecha_inter ? new Date(ex.fecha_inter).toISOString() : new Date().toISOString(),
+                estado_inter: ex.estado_inter || 'no_satisfactorio'
+            }));
+
+            console.log(`✅ Encontrados ${processedExchanges.length} intercambios abiertos`);
+            return processedExchanges;
+
+        } catch (err: any) {
+            lastError = err;
+            console.error(`❌ Error en intento ${attempt}/${MAX_RETRIES}:`, err.message);
+
+            if (attempt < MAX_RETRIES) {
+                const delay = attempt * 1000; // 1s, 2s
+                console.log(`⏳ Reintentando en ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+    }
+
+    // Si llegamos aquí, todos los intentos fallaron
+    console.error('❌ Todos los intentos fallaron');
+    throw new Error(lastError?.message || 'Error al obtener intercambios después de varios intentos');
 }

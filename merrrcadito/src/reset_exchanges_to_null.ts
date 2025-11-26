@@ -11,7 +11,8 @@ async function main() {
       UPDATE intercambio 
       SET cod_us_1 = NULL, 
           cant_prod_origen = 0, 
-          unidad_medida_origen = NULL
+          unidad_medida_origen = NULL,
+          estado_inter = 'pendiente'::"ExchangeState"
     `);
         console.log('✓ Tabla intercambio actualizada');
 

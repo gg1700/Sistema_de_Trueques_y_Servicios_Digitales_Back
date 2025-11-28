@@ -18,7 +18,7 @@ export async function getEventsByUser(req: Request, res: Response) {
         }
         const user_events = await EventService.get_events_by_user(cod_us);
         if (!user_events) {
-            return res.status(400).json({
+            return res.status(404).json({
                 success: false,
                 message: 'No se encontraron eventos para el usuario solicitado.',
                 data: []
@@ -65,54 +65,69 @@ export async function getUserCreatedEvents(req: Request, res: Response) {
 export async function createEvent(req: Request, res: Response) {
     try {
         const { cod_us } = req.query;
+        const eventData = req.body;
+        const file = req.file;
 
-        if (!cod_us || typeof cod_us !== 'string') {
+        // Determinar si es creación por usuario o por organización
+        const isByOrganization = !cod_us && eventData.cod_org;
+        const isByUser = cod_us && !eventData.cod_org;
+
+        if (!isByOrganization && !isByUser) {
             return res.status(400).json({
                 success: false,
-                message: 'Codigo de usuario invalido.'
+                message: 'Debe proporcionar cod_us (query) o cod_org (body), pero no ambos.'
             });
         }
 
-        const {
-            titulo_evento,
-            descripcion_evento,
-            fecha_inicio_evento,
-            fecha_finalizacion_evento,
-            tipo_evento,
-            costo_inscripcion
-        } = req.body;
-
-        if (!titulo_evento || !descripcion_evento || !fecha_inicio_evento || !fecha_finalizacion_evento || !tipo_evento) {
+        // Validaciones comunes
+        if (!eventData.titulo_evento || !eventData.descripcion_evento || !eventData.fecha_inicio_evento || !eventData.fecha_finalizacion_evento || !eventData.tipo_evento) {
             return res.status(400).json({
                 success: false,
                 message: 'Faltan datos requeridos del evento.'
             });
         }
 
-        const banner_evento = req.file?.buffer || null;
+        let result;
 
-        const cod_evento = await EventService.create_event({
-            cod_us: parseInt(cod_us),
-            titulo_evento,
-            descripcion_evento,
-            fecha_inicio_evento,
-            fecha_finalizacion_evento,
-            tipo_evento,
-            banner_evento: banner_evento || null,
-            costo_inscripcion: parseFloat(costo_inscripcion) || 0.0,
-            cod_rec: req.body.cod_rec ? parseInt(req.body.cod_rec) : null
-        });
+        if (isByUser) {
+            // Crear evento por usuario (de HEAD)
+            const {
+                titulo_evento,
+                descripcion_evento,
+                fecha_inicio_evento,
+                fecha_finalizacion_evento,
+                tipo_evento,
+                costo_inscripcion
+            } = eventData;
+
+            const cod_evento = await EventService.create_event({
+                cod_us: parseInt(cod_us as string),
+                titulo_evento,
+                descripcion_evento,
+                fecha_inicio_evento,
+                fecha_finalizacion_evento,
+                tipo_evento,
+                banner_evento: file?.buffer || null,
+                costo_inscripcion: parseFloat(costo_inscripcion) || 0.0,
+                cod_rec: eventData.cod_rec ? parseInt(eventData.cod_rec) : null
+            });
+
+            result = { cod_evento };
+        } else {
+            // Crear evento por organización (de Backend-Mateo)
+            result = await EventService.create_event(eventData, file ? file.buffer : null);
+        }
 
         return res.status(201).json({
             success: true,
             message: 'Evento creado exitosamente.',
-            data: { cod_evento }
+            data: result
         });
     } catch (err) {
         console.error("Error en createEvent:", err);
         return res.status(500).json({
             success: false,
-            message: `Error al crear el evento: ${(err as Error).message}`,
+            message: "Error al crear el evento.",
             error: (err as Error).message
         });
     }
@@ -163,6 +178,31 @@ export async function getAllRewards(req: Request, res: Response) {
         return res.status(500).json({
             success: false,
             message: 'Error al obtener las recompensas',
+            error: (err as Error).message
+        });
+    }
+}
+
+export async function getEventsByOrg(req: Request, res: Response) {
+    try {
+        const { cod_org } = req.query;
+        if (!cod_org) {
+            return res.status(400).json({
+                success: false,
+                message: "Falta el código de organización (cod_org)."
+            });
+        }
+
+        const events = await EventService.get_events_by_org(Number(cod_org));
+
+        return res.status(200).json({
+            success: true,
+            data: events
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: "Error al obtener eventos de la organización.",
             error: (err as Error).message
         });
     }

@@ -88,3 +88,51 @@ export async function registerOrganization(req: Request, res: Response) {
     });
   }
 }
+
+export async function getOrganizationData(req: Request, res: Response) {
+  try {
+    const { nom_leg_org, cif } = req.query;
+
+    if (
+      !nom_leg_org ||
+      !cif ||
+      typeof nom_leg_org !== "string" ||
+      typeof cif !== "string"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Parámetros inválidos. Se requieren nom_leg_org y cif en la query.",
+      });
+    }
+
+    const organizationData = await OrganizationService.get_organization_data(
+      nom_leg_org,
+      cif
+    );
+
+    const isEmpty =
+      !organizationData ||
+      (Array.isArray(organizationData) && organizationData.length === 0);
+
+    if (isEmpty) {
+      return res.status(404).json({
+        success: false,
+        message: "Organización no encontrada.",
+        data: [],
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: organizationData,
+    });
+  } catch (error) {
+    console.error("Error en getOrganizationData:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error interno al obtener datos de la organización",
+      error: (error as Error).message,
+    });
+  }
+}

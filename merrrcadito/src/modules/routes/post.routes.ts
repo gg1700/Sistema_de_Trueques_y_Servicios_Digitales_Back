@@ -14,6 +14,11 @@ router.get(
   PostController.getAllActiveProductPosts
 );
 
+router.get(
+  "/all_active_service_posts",
+  PostController.getAllActiveServicePosts
+);
+
 router.get('/:cod_pub', PostController.getPostById);
 router.get("/explore/:userId", PostController.getAllPostsExceptUser);
 

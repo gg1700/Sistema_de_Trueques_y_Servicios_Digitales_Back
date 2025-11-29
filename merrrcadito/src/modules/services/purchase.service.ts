@@ -1,5 +1,8 @@
 import * as TransactionService from './transaction.service';
 import * as UserService from './user.service';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 interface PurchaseResult {
     success: boolean;
@@ -69,6 +72,3 @@ export async function purchaseProduct(
     }
 }
 
-// Necesitamos importar prisma
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();

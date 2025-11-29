@@ -52,6 +52,35 @@ export async function get_all_active_product_posts() {
     }
 }
 
+export async function get_all_active_service_posts() {
+    try {
+        const posts = await prisma.$queryRaw`
+            SELECT 
+                p.cod_pub,
+                s.cod_serv,
+                s.nom_serv,
+                p.cod_us,
+                s.precio_serv,
+                p.foto_pub,
+                p.calif_pond_pub,
+                p.estado_pub,
+                s.desc_serv,
+                p.impacto_amb_pub,
+                ps.hrs_ini_dia_serv::VARCHAR as hrs_ini_serv,
+                ps.hrs_fin_dia_serv::VARCHAR as hrs_fin_serv,
+                s.duracion_serv as duracion
+            FROM publicacion p
+            INNER JOIN publicacion_servicio ps ON p.cod_pub = ps.cod_pub
+            INNER JOIN servicio s ON ps.cod_serv = s.cod_serv
+            WHERE p.estado_pub = 'activo'
+            ORDER BY p.fecha_ini_pub DESC
+        `;
+        return posts;
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}
+
 export async function get_post_by_id(cod_pub: string) {
     try {
         const post = await prisma.$queryRaw`

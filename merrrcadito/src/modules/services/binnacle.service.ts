@@ -16,7 +16,7 @@ export async function register_transaction_binnacle(cod_trans: string) {
             return { success: false, message: 'El codigo de la transaccion asociada no existe.' };
         }
         await prisma.$queryRaw`
-            SELECT FROM sp_registrartransaccionbitacora(
+            SELECT sp_registrartransaccionbitacora(
                 ${cod_trans}::INTEGER
             )
         `;

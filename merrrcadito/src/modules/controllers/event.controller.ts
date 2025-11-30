@@ -249,3 +249,32 @@ export async function getAllEvents(req: Request, res: Response) {
         });
     }
 }
+
+export async function getEventById(req: Request, res: Response) {
+    try {
+        const { cod_evento } = req.params;
+        if (!cod_evento) {
+            return res.status(400).json({
+                success: false,
+                message: 'Codigo de evento invalido.'
+            });
+        }
+
+        const event = await EventService.get_event_by_id(Number(cod_evento));
+
+        if (!event) {
+            return res.status(404).json({
+                success: false,
+                message: 'Evento no encontrado.'
+            });
+        }
+
+        return res.status(200).json(event);
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener el evento',
+            error: (err as Error).message
+        });
+    }
+}

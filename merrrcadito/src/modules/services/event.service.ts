@@ -284,3 +284,37 @@ export async function get_all_events() {
         throw new Error((err as Error).message);
     }
 }
+
+export async function get_event_by_id(cod_evento: number) {
+    try {
+        const events = await prisma.$queryRaw`
+            SELECT 
+                e.cod_evento,
+                e.titulo_evento as nom_evento, -- Alias para compatibilidad con frontend
+                e.titulo_evento,
+                e.descripcion_evento,
+                e.fecha_inicio_evento,
+                e.fecha_finalizacion_evento,
+                e.duracion_evento,
+                e.cant_personas_inscritas,
+                e.estado_evento,
+                e.tipo_evento,
+                e.costo_inscripcion,
+                e.impacto_amb_inter,
+                e.cod_us_creador,
+                e.banner_evento IS NOT NULL as tiene_banner,
+                o.nom_com_org as organizacion_nombre
+            FROM evento e
+            LEFT JOIN organizacion o ON e.cod_org = o.cod_org
+            WHERE e.cod_evento = ${cod_evento}::INTEGER
+        ` as any[];
+
+        if (events.length > 0) {
+            return convertBigIntToNumber(events)[0];
+        }
+        return null;
+    } catch (err) {
+        console.error('Error en get_event_by_id:', err);
+        throw new Error((err as Error).message);
+    }
+}

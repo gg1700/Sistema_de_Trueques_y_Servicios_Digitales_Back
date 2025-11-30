@@ -16,5 +16,6 @@ router.get('/get_events_org', EventController.getEventsByOrg);
 router.post('/create', upload.single('banner_evento'), EventController.createEvent);
 router.get('/default-image', EventController.getDefaultImage);
 router.get('/:cod_evento/image', EventController.getEventImage);
+router.get('/:cod_evento', EventController.getEventById);
 
 export default router;

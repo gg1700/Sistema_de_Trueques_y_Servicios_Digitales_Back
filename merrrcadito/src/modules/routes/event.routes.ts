@@ -18,4 +18,5 @@ router.get('/default-image', EventController.getDefaultImage);
 router.get('/:cod_evento/image', EventController.getEventImage);
 router.get('/:cod_evento', EventController.getEventById);
 
+
 export default router;

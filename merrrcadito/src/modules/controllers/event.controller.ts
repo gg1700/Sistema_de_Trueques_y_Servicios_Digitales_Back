@@ -165,6 +165,29 @@ export async function getEventImage(req: Request, res: Response) {
     }
 }
 
+export async function getDefaultImage(req: Request, res: Response) {
+    try {
+        const path = require('path');
+        const fs = require('fs');
+        const imagePath = path.join(__dirname, '../../images/default_image.jpg');
+
+        if (fs.existsSync(imagePath)) {
+            res.sendFile(imagePath);
+        } else {
+            res.status(404).json({
+                success: false,
+                message: 'Imagen por defecto no encontrada.'
+            });
+        }
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener la imagen por defecto',
+            error: (err as Error).message
+        });
+    }
+}
+
 // Obtener todas las recompensas disponibles
 export async function getAllRewards(req: Request, res: Response) {
     try {
@@ -203,6 +226,25 @@ export async function getEventsByOrg(req: Request, res: Response) {
         return res.status(500).json({
             success: false,
             message: "Error al obtener eventos de la organización.",
+            error: (err as Error).message
+        });
+    }
+}
+
+// Obtener todos los eventos activos (vigentes)
+export async function getAllEvents(req: Request, res: Response) {
+    try {
+        const events = await EventService.get_all_events();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Eventos obtenidos exitosamente.',
+            data: events
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener los eventos',
             error: (err as Error).message
         });
     }

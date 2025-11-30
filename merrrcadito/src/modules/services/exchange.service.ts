@@ -155,18 +155,18 @@ async function calcular_impacto_intercambio(
     }
 }
 
-// Obtener intercambios de un usuario
+// Obtener intercambios de un usuario (SOLO los que el usuario ha creado)
 export async function get_user_exchanges(cod_us: number) {
     try {
-        console.log(`Consultando intercambios para usuario ${cod_us} (v3 - con historial rechazado)`);
+        console.log(`Consultando intercambios creados por usuario ${cod_us} (solo ofertas propias)`);
 
         const exchanges: any[] = await prisma.$queryRaw`
             SELECT DISTINCT ON (i.cod_inter, COALESCE(ip.estado_inter::text, 'pendiente'))
                 i.cod_inter,
                 i.cod_us_1,
                 i.cod_us_2,
-                u2.nom_us || ' ' || u2.ap_pat_us || COALESCE(' ' || u2.ap_mat_us, '') as nombre_usuario_2,
-                u2.handle_name as handle_name_2,
+                u1.nom_us || ' ' || u1.ap_pat_us || COALESCE(' ' || u1.ap_mat_us, '') as nombre_usuario_1,
+                u1.handle_name as handle_name_1,
                 i.cant_prod_origen,
                 i.unidad_medida_origen,
                 i.cant_prod_destino,
@@ -180,12 +180,11 @@ export async function get_user_exchanges(cod_us: number) {
                 ip.cod_prod_destino,
                 p2.nom_prod as nombre_prod_destino
             FROM intercambio i
-            LEFT JOIN usuario u2 ON i.cod_us_2 = u2.cod_us
+            LEFT JOIN usuario u1 ON i.cod_us_1 = u1.cod_us
             LEFT JOIN intercambio_producto ip ON i.cod_inter = ip.cod_inter
             LEFT JOIN producto p1 ON ip.cod_prod_origen = p1.cod_prod
             LEFT JOIN producto p2 ON ip.cod_prod_destino = p2.cod_prod
-            WHERE i.cod_us_1 = ${cod_us} 
-               OR ip.cod_us_origen = ${cod_us}
+            WHERE i.cod_us_2 = ${cod_us}
             ORDER BY i.cod_inter DESC, COALESCE(ip.estado_inter::text, 'pendiente'), ip.fecha_inter DESC
         `;
 
@@ -197,9 +196,9 @@ export async function get_user_exchanges(cod_us: number) {
                 fecha = new Date(ex.fecha_inter);
             }
 
-            // Manejo de usuario 2 (si es nulo, mostrar "Pendiente" o el mismo usuario si es oferta abierta)
-            const nombre_usuario_2 = ex.nombre_usuario_2 || 'Usuario';
-            const handle_name_2 = ex.handle_name_2 || 'pendiente';
+            // Manejo de usuario 1 (quien propone - si es nulo, significa que es oferta abierta)
+            const nombre_usuario_1 = ex.nombre_usuario_1 || 'Pendiente';
+            const handle_name_1 = ex.handle_name_1 || 'pendiente';
 
             // Manejo de producto destino
             const nombre_prod_destino = ex.nombre_prod_destino || 'Por definir';
@@ -210,8 +209,8 @@ export async function get_user_exchanges(cod_us: number) {
                 foto_inter: undefined, // No enviar el bytea completo al frontend
                 fecha_inter: fecha.toISOString(),
                 estado_inter: ex.estado_inter || 'pendiente',
-                nombre_usuario_2,
-                handle_name_2,
+                nombre_usuario_1,
+                handle_name_1,
                 nombre_prod_destino
             };
         });
@@ -219,7 +218,7 @@ export async function get_user_exchanges(cod_us: number) {
         console.log('Intercambios procesados:', processedExchanges.map(ex => ({
             cod_inter: ex.cod_inter,
             fecha: ex.fecha_inter,
-            usuario2: ex.handle_name_2
+            usuario_propone: ex.handle_name_1
         })));
 
         return processedExchanges;

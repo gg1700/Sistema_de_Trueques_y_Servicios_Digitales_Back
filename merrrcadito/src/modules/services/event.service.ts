@@ -26,10 +26,28 @@ export async function get_events_by_user(cod_us: string) {
 // Nueva función para obtener eventos PROPIOS del usuario (creados por el usuario)
 export async function get_user_created_events(cod_us: string) {
     try {
+        // Reemplazamos el SP defectuoso con una consulta directa que filtra por cod_us_creador
+        // Esta columna fue agregada para distinguir inequívocamente al creador
         const user_created_events = await prisma.$queryRaw`
-            SELECT * FROM sp_obtenerEventosPropiosUsuario(
-                ${cod_us}::INTEGER
-            )
+            SELECT 
+                e.cod_evento,
+                e.titulo_evento,
+                e.descripcion_evento,
+                e.fecha_registro_evento,
+                e.fecha_inicio_evento,
+                e.fecha_finalizacion_evento,
+                e.duracion_evento,
+                e.banner_evento,
+                e.cant_personas_inscritas,
+                e.ganancia_evento,
+                e.estado_evento::VARCHAR,
+                e.tipo_evento::VARCHAR,
+                e.costo_inscripcion,
+                e.impacto_amb_inter,
+                (e.banner_evento IS NOT NULL) as tiene_banner
+            FROM EVENTO e
+            WHERE e.cod_us_creador = ${parseInt(cod_us)}::INTEGER
+            ORDER BY e.fecha_registro_evento DESC
         `;
         return convertBigIntToNumber(user_created_events);
     } catch (err) {
@@ -224,6 +242,45 @@ export async function get_events_by_org(cod_org: number) {
         ` as any[];
         return events;
     } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}
+
+// Obtener todos los eventos activos (vigentes) para la sección pública
+export async function get_all_events() {
+    try {
+        const events = await prisma.$queryRaw`
+            SELECT 
+                e.cod_evento,
+                e.titulo_evento,
+                e.descripcion_evento,
+                e.fecha_inicio_evento,
+                e.fecha_finalizacion_evento,
+                e.duracion_evento,
+                e.cant_personas_inscritas,
+                e.estado_evento,
+                e.tipo_evento,
+                e.costo_inscripcion,
+                e.impacto_amb_inter,
+                e.banner_evento IS NOT NULL as tiene_banner,
+                o.nom_com_org as organizacion_nombre,
+                o.logo_org IS NOT NULL as tiene_logo_org,
+                COALESCE(
+                    (SELECT monto_rec FROM recompensa r 
+                     INNER JOIN evento_recompensa er ON r.cod_rec = er.cod_rec 
+                     WHERE er.cod_evento = e.cod_evento 
+                     LIMIT 1),
+                    0
+                ) as monto_recompensa
+            FROM evento e
+            LEFT JOIN organizacion o ON e.cod_org = o.cod_org
+            WHERE e.estado_evento = 'vigente'
+            ORDER BY e.fecha_inicio_evento ASC
+        ` as any[];
+
+        return convertBigIntToNumber(events);
+    } catch (err) {
+        console.error('Error en get_all_events:', err);
         throw new Error((err as Error).message);
     }
 }

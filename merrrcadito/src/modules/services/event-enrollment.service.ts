@@ -43,34 +43,26 @@ export async function getUserEnrolledEvents(cod_us: number) {
  */
 export async function enrollUserInEvent(cod_us: number, cod_evento: number) {
     try {
-        // Verificar si ya está inscrito
-        const existing = await prisma.$queryRaw`
-      SELECT * FROM usuario_evento 
-      WHERE cod_us = ${cod_us}::INTEGER 
-      AND cod_evento = ${cod_evento}::INTEGER
-    ` as any[];
+        const result = await prisma.$queryRaw`
+            SELECT * FROM sp_inscribirEventoConPago(
+                ${cod_us}::INTEGER,
+                ${cod_evento}::INTEGER
+            )
+        ` as any[];
 
-        if (existing.length > 0) {
-            return { success: false, message: "Ya estás inscrito en este evento" };
+        if (result && result.length > 0) {
+            const { success, message } = result[0];
+            return { success, message };
         }
 
-        // Inscribir al usuario
-        await prisma.$queryRaw`
-      INSERT INTO usuario_evento (cod_evento, cod_us)
-      VALUES (${cod_evento}::INTEGER, ${cod_us}::INTEGER)
-    `;
-
-        // Incrementar contador de personas inscritas
-        await prisma.$queryRaw`
-      UPDATE evento 
-      SET cant_personas_inscritas = cant_personas_inscritas + 1
-      WHERE cod_evento = ${cod_evento}::INTEGER
-    `;
-
-        return { success: true, message: "Inscripción exitosa" };
+        return { success: false, message: "Error desconocido al procesar la inscripción" };
     } catch (err) {
         console.error("Error en enrollUserInEvent:", err);
-        throw new Error((err as Error).message);
+        const errorMessage = (err as Error).message;
+        if (errorMessage.includes('Saldo insuficiente')) {
+            return { success: false, message: "Saldo insuficiente para realizar la inscripción" };
+        }
+        throw new Error(errorMessage);
     }
 }
 

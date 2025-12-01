@@ -2,6 +2,8 @@ import * as dotenv from 'dotenv';
 import connectToDatabase from '../../database';
 import { PrismaClient } from '@prisma/client';
 
+//
+
 dotenv.config();
 
 const prisma = new PrismaClient();

@@ -1,0 +1,96 @@
+
+> merrrcadito@0.1.0 mer
+> npx ts-node src/app.ts
+
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+Server running on port: 5000
+Consultando intercambios creados por usuario 6 (solo ofertas propias)
+Intercambios procesados: [
+  {
+    cod_inter: 15,
+    fecha: '2025-11-16T22:13:12.618Z',
+    usuario_propone: 'pendiente'
+  }
+]
+Obteniendo impacto ambiental para usuario: 6
+Huella CO2: 410.3
+Promedio intercambios: 24.7
+Promedio productos: 0
+Promedio servicios: 0
+Total eventos participados: 7, Impacto: 35
+Resultado final: {
+  huella_co2_total: 410.3,
+  tendencia: 'bueno',
+  impacto_promedio_intercambios: 24.7,
+  impacto_promedio_productos: 0,
+  impacto_promedio_servicios: 0,
+  impacto_promedio_eventos: 35
+}
+Consultando intercambios creados por usuario 6 (solo ofertas propias)
+Intercambios procesados: [
+  {
+    cod_inter: 15,
+    fecha: '2025-11-16T22:13:12.618Z',
+    usuario_propone: 'pendiente'
+  }
+]
+Obteniendo impacto ambiental para usuario: 6
+Huella CO2: 410.3
+Promedio intercambios: 24.7
+Promedio productos: 0
+Promedio servicios: 0
+Total eventos participados: 7, Impacto: 35
+Resultado final: {
+  huella_co2_total: 410.3,
+  tendencia: 'bueno',
+  impacto_promedio_intercambios: 24.7,
+  impacto_promedio_productos: 0,
+  impacto_promedio_servicios: 0,
+  impacto_promedio_eventos: 35
+}
+Consultando intercambios creados por usuario 6 (solo ofertas propias)
+Intercambios procesados: [
+  {
+    cod_inter: 15,
+    fecha: '2025-11-16T22:13:12.618Z',
+    usuario_propone: 'pendiente'
+  }
+]
+Obteniendo impacto ambiental para usuario: 6
+Huella CO2: 410.3
+Promedio intercambios: 24.7
+Promedio productos: 0
+Promedio servicios: 0
+Total eventos participados: 7, Impacto: 35
+Resultado final: {
+  huella_co2_total: 410.3,
+  tendencia: 'bueno',
+  impacto_promedio_intercambios: 24.7,
+  impacto_promedio_productos: 0,
+  impacto_promedio_servicios: 0,
+  impacto_promedio_eventos: 35
+}
+Consultando intercambios creados por usuario 6 (solo ofertas propias)
+Intercambios procesados: [
+  {
+    cod_inter: 15,
+    fecha: '2025-11-16T22:13:12.618Z',
+    usuario_propone: 'pendiente'
+  }
+]
+Obteniendo impacto ambiental para usuario: 6
+Huella CO2: 410.3
+Promedio intercambios: 24.7
+Promedio productos: 0
+Promedio servicios: 0
+Total eventos participados: 6, Impacto: 30
+Resultado final: {
+  huella_co2_total: 410.3,
+  tendencia: 'bueno',
+  impacto_promedio_intercambios: 24.7,
+  impacto_promedio_productos: 0,
+  impacto_promedio_servicios: 0,
+  impacto_promedio_eventos: 30
+}

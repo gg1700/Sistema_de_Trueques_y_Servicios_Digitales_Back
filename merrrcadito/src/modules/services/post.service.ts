@@ -88,7 +88,34 @@ export async function create_post(cod_us: string, cod_prod: string, current_post
 export async function get_all_active_product_posts() {
     try {
         const posts = await prisma.$queryRaw`
-            SELECT * FROM sp_obtenerpublicacionesproducto()
+            SELECT 
+                p.cod_pub,
+                p.impacto_amb_pub,
+                p.calif_pond_pub,
+                p.estado_pub,
+                p.fecha_ini_pub,
+                pr.cod_prod,
+                pr.nom_prod,
+                pr.precio_prod,
+                pr.calidad_prod,
+                pr.marca_prod,
+                pr.desc_prod,
+                p.contenido,
+                pp.cant_prod as cantidad,
+                pp.unidad_medida,
+                cat.nom_cat,
+                subcat.nom_subcat_prod,
+                u.handle_name,
+                u.correo_us,
+                u.telefono_us
+            FROM publicacion p
+            INNER JOIN publicacion_producto pp ON p.cod_pub = pp.cod_pub
+            INNER JOIN producto pr ON pp.cod_prod = pr.cod_prod
+            INNER JOIN subcategoria_producto subcat ON pr.cod_subcat_prod = subcat.cod_subcat_prod
+            INNER JOIN categoria cat ON subcat.cod_cat = cat.cod_cat
+            INNER JOIN usuario u ON p.cod_us = u.cod_us
+            WHERE p.estado_pub = 'activo'
+            ORDER BY p.fecha_ini_pub DESC
         `;
         return posts;
     } catch (err) {
@@ -109,13 +136,16 @@ export async function get_all_active_service_posts() {
                 p.calif_pond_pub,
                 p.estado_pub,
                 s.desc_serv,
+                p.contenido,
                 p.impacto_amb_pub,
                 ps.hrs_ini_dia_serv::VARCHAR as hrs_ini_serv,
                 ps.hrs_fin_dia_serv::VARCHAR as hrs_fin_serv,
-                s.duracion_serv as duracion
+                s.duracion_serv as duracion,
+                u.handle_name
             FROM publicacion p
             INNER JOIN publicacion_servicio ps ON p.cod_pub = ps.cod_pub
             INNER JOIN servicio s ON ps.cod_serv = s.cod_serv
+            INNER JOIN usuario u ON p.cod_us = u.cod_us
             WHERE p.estado_pub = 'activo'
             ORDER BY p.fecha_ini_pub DESC
         `;

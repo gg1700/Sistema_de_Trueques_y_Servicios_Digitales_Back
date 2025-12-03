@@ -1,0 +1,24 @@
+
+> merrrcadito@0.1.0 dev
+> next dev --turbopack
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /home/jhosua/package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * /home/jhosua/Sistema_de_Trueques_y_Servicios_Digitales_Back/merrrcadito/package-lock.json
+   * /home/jhosua/Sistema_de_Trueques_y_Servicios_Digitales_Back/package-lock.json
+
+   ▲ Next.js 15.5.4 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.26:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 853ms
+ ○ Compiling /_not-found/page ...
+ ✓ Compiled /_not-found/page in 2.3s
+ GET /mis-reportes 404 in 2540ms
+ ✓ Compiled /favicon.ico in 146ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 401ms

@@ -37,4 +37,14 @@ router.get('/action_report_by_month', UserController.getUsersActionsByMonth);
 
 router.get('/:id/environmental_impact', UserController.getUserEnvironmentalImpact);
 
+router.get('/:id/total_sales', UserController.getUserTotalSales);
+
+router.get('/:id/total_income', UserController.getUserTotalIncome);
+
+router.get('/:id/sales_by_category', UserController.getUserSalesByCategory);
+
+router.get('/:id/sales_by_month', UserController.getUserSalesByMonth);
+
+router.get('/:id/income_by_month', UserController.getUserIncomeByMonth);
+
 export default router;

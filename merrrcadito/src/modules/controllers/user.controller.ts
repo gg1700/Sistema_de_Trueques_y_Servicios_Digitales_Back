@@ -339,3 +339,186 @@ export async function getUserEnvironmentalImpact(req: Request, res: Response) {
         });
     }
 }
+
+export async function getUserTotalSales(req: Request, res: Response) {
+    try {
+        const { id } = req.params;
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de usuario inválido.'
+            });
+        }
+        const cod_us = parseInt(id);
+        if (isNaN(cod_us)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de usuario debe ser un número.'
+            });
+        }
+        const total_sales = await UserService.get_user_total_sales(cod_us);
+        return res.status(200).json({
+            success: true,
+            message: 'Total de ventas del usuario obtenido exitosamente.',
+            data: total_sales
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener el total de ventas del usuario.',
+            error: (err as Error).message
+        });
+    }
+}
+
+export async function getUserTotalIncome(req: Request, res: Response) {
+    try {
+        const { id } = req.params;
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de usuario inválido.'
+            });
+        }
+        const cod_us = parseInt(id);
+        if (isNaN(cod_us)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de usuario debe ser un número.'
+            });
+        }
+        const total_income = await UserService.get_user_total_income(cod_us);
+        return res.status(200).json({
+            success: true,
+            message: 'Total de ingresos del usuario obtenido exitosamente.',
+            data: total_income
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener el total de ingresos del usuario.',
+            error: (err as Error).message
+        });
+    }
+}
+
+export async function getUserSalesByCategory(req: Request, res: Response) {
+    try {
+        const { id } = req.params;
+        const { month, year } = req.query;
+
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de usuario inválido.'
+            });
+        }
+        const cod_us = parseInt(id);
+        if (isNaN(cod_us)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de usuario debe ser un número.'
+            });
+        }
+
+        console.log('getUserSalesByCategory params:', { cod_us, month, year });
+
+        const sales_by_category = await UserService.get_user_sales_by_category(
+            cod_us,
+            month as string,
+            year as string
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: 'Ventas por categoría obtenidas exitosamente.',
+            data: sales_by_category
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener las ventas por categoría.',
+            error: (err as Error).message
+        });
+    }
+}
+
+export async function getUserSalesByMonth(req: Request, res: Response) {
+    try {
+        const { id } = req.params;
+        const { year } = req.query;
+
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de usuario inválido.'
+            });
+        }
+        const cod_us = parseInt(id);
+        if (isNaN(cod_us)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de usuario debe ser un número.'
+            });
+        }
+
+        console.log('getUserSalesByMonth params:', { cod_us, year });
+
+        const sales_by_month = await UserService.get_user_sales_by_month(
+            cod_us,
+            year as string
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: 'Ventas por mes obtenidas exitosamente.',
+            data: sales_by_month
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener las ventas por mes.',
+            error: (err as Error).message
+        });
+    }
+}
+
+export async function getUserIncomeByMonth(req: Request, res: Response) {
+    try {
+        const { id } = req.params;
+        const { year } = req.query;
+
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de usuario inválido.'
+            });
+        }
+        const cod_us = parseInt(id);
+        if (isNaN(cod_us)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de usuario debe ser un número.'
+            });
+        }
+
+        console.log('getUserIncomeByMonth params:', { cod_us, year });
+
+        const income_by_month = await UserService.get_user_income_by_month(
+            cod_us,
+            year as string
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: 'Ingresos por mes obtenidos exitosamente.',
+            data: income_by_month
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener los ingresos por mes.',
+            error: (err as Error).message
+        });
+    }
+}

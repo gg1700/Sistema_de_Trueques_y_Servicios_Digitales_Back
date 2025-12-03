@@ -41,27 +41,45 @@ export async function createService(data: ServiceData) {
 
     const cod_serv = newService[0].cod_serv;
 
-    // 2. Crear la publicación asociada en PUBLICACION
+    // 2. Calcular impacto ambiental del servicio
+    // Fórmula: (duracion_serv_horas * 0.3) + (dif_dist_serv * 0.5)
+    // - duracion_serv está en minutos, convertir a horas
+    // - dif_dist_serv representa la distancia/dificultad del servicio
+    // Si no se proporcionan valores, usar defaults: 60 min y distancia 1
+    const duracion = Number(data.duracion_serv) || 60;
+    const distancia = Number(data.dif_dist_serv) || 1;
+
+    const duracionHoras = duracion / 60;
+    const impactoBase = (duracionHoras * 0.3) + (distancia * 0.5);
+
+    // Los servicios tienen un impacto positivo base de 5 puntos
+    // más el impacto calculado (cuanto más largo y complejo, mayor beneficio)
+    const impactoAmbiental = Number((5 + impactoBase).toFixed(2));
+
+    console.log(`[SERVICE CO2] Servicio: ${data.nom_serv}, Duración: ${data.duracion_serv}min, Distancia: ${data.dif_dist_serv}, Impacto: ${impactoAmbiental}`);
+
+    // 3. Crear la publicación asociada en PUBLICACION
     // Se asume fecha actual como inicio y fin (o indefinido)
     const newPub = await prisma.$queryRaw`
       INSERT INTO publicacion (
         cod_us, fecha_ini_pub, fecha_fin_pub, 
-        calif_pond_pub, impacto_amb_pub, foto_pub
+        calif_pond_pub, impacto_amb_pub, foto_pub, contenido
       )
       VALUES (
         ${data.cod_us}::INTEGER,
         NOW(),
         NOW() + INTERVAL '1 year', -- Por defecto 1 año de vigencia
         0.0,
-        0.0,
-        ${data.foto_serv ? data.foto_serv : null}::BYTEA
+        ${impactoAmbiental}::DECIMAL,
+        ${data.foto_serv ? data.foto_serv : null}::BYTEA,
+        ${data.desc_serv}
       )
       RETURNING cod_pub
     ` as any[];
 
     const cod_pub = newPub[0].cod_pub;
 
-    // 3. Vincular Publicación con Servicio en PUBLICACION_SERVICIO
+    // 4. Vincular Publicación con Servicio en PUBLICACION_SERVICIO
     await prisma.$queryRaw`
       INSERT INTO publicacion_servicio (
         cod_pub, cod_serv, hrs_ini_dia_serv, hrs_fin_dia_serv
@@ -74,7 +92,13 @@ export async function createService(data: ServiceData) {
       )
     `;
 
-    return { success: true, message: "Servicio registrado correctamente", cod_serv, cod_pub };
+    return {
+      success: true,
+      message: `Servicio registrado correctamente con impacto ambiental de ${impactoAmbiental} puntos`,
+      cod_serv,
+      cod_pub,
+      impacto_amb_pub: impactoAmbiental
+    };
   } catch (err) {
     console.error("Error en createService:", err);
     throw new Error((err as Error).message);
@@ -96,6 +120,8 @@ export async function getUserServices(cod_us: number) {
         s.estado_serv,
         p.cod_pub,
         p.foto_pub as foto_serv,
+        p.impacto_amb_pub,
+        p.contenido,
         ps.hrs_ini_dia_serv,
         ps.hrs_fin_dia_serv,
         c.nom_cat
@@ -104,6 +130,7 @@ export async function getUserServices(cod_us: number) {
       INNER JOIN servicio s ON ps.cod_serv = s.cod_serv
       LEFT JOIN categoria c ON s.cod_cat = c.cod_cat
       WHERE p.cod_us = ${cod_us}::INTEGER
+      AND p.estado_pub = 'activo'
     ` as any[];
 
     return { success: true, data: services };

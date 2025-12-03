@@ -31,7 +31,7 @@ export async function createService(req: Request, res: Response) {
             desc_serv,
             precio_serv,
             duracion_serv,
-            dif_dist_serv: dif_dist_serv || 0,
+            dif_dist_serv,
             cod_us,
             hrs_ini_dia_serv: hrs_ini_dia_serv || "08:00",
             hrs_fin_dia_serv: hrs_fin_dia_serv || "18:00",

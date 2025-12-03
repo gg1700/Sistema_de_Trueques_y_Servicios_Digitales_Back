@@ -75,12 +75,10 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                     } else {
                         monto_pagado = total_cost;
                         estado_trans = 'satisfactorio';
-                        // Actualizar el saldo del usuario origen DENTRO DE LA TRANSACCIÓN
-                        await tx.$queryRaw`
-                            UPDATE billetera
-                            SET saldo_actual = saldo_actual - ${total_cost}::DECIMAL
-                            WHERE cod_us = ${cod_us_origen}::INTEGER
-                        `;
+                        monto_pagado = total_cost;
+                        estado_trans = 'satisfactorio';
+                        // El saldo se actualiza automáticamente mediante el trigger trg_after_trans_aplicar_saldos
+                        // No es necesario hacerlo manualmente aquí para evitar doble cobro
                     }
                 }
             } else if (attributes.cod_evento != null && attributes.cod_pub == null && attributes.id_token == null) {
@@ -123,12 +121,10 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                     } else {
                         monto_pagado = costo_inscripcion;
                         estado_trans = 'satisfactorio';
-                        // Actualizar el saldo del usuario origen DENTRO DE LA TRANSACCIÓN
-                        await tx.$queryRaw`
-                            UPDATE billetera
-                            SET saldo_actual = saldo_actual - ${costo_inscripcion}::DECIMAL
-                            WHERE cod_us = ${cod_us_origen}::INTEGER
-                        `;
+                        monto_pagado = costo_inscripcion;
+                        estado_trans = 'satisfactorio';
+                        // El saldo se actualiza automáticamente mediante el trigger trg_after_trans_aplicar_saldos
+                        // No es necesario hacerlo manualmente aquí para evitar doble cobro
                     }
                 }
             } else if (attributes.id_token != null && attributes.cod_pub == null && attributes.cod_evento == null) {
@@ -210,13 +206,11 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                         monto_pagado_bs = precio_real_num;
                         estado_trans = 'satisfactorio';
                         console.log(`[DEBUG] Saldo suficiente. Actualizando billetera...`);
-                        // Actualizar saldo real (descontar dinero) y saldo actual (agregar tokens) DENTRO DE LA TRANSACCIÓN
-                        await tx.$queryRaw`
-                            UPDATE billetera
-                            SET saldo_real = saldo_real - ${precio_real_num}::DECIMAL,
-                                saldo_actual = saldo_actual + ${tokens_num}::DECIMAL
-                            WHERE cod_us = ${cod_us_origen}::INTEGER
-                        `;
+                        monto_pagado_bs = precio_real_num;
+                        estado_trans = 'satisfactorio';
+                        console.log(`[DEBUG] Saldo suficiente. Registrando transacción...`);
+                        // El saldo se actualiza automáticamente mediante el trigger trg_after_trans_aplicar_saldos
+                        // No es necesario hacerlo manualmente aquí para evitar doble cobro
                         console.log(`[DEBUG] Billetera actualizada exitosamente`);
                     }
                 }
@@ -245,7 +239,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                     ${attributes.cod_evento ?? null}::INTEGER,
                     ${attributes.descr_trans ?? null}::VARCHAR,
                     ${attributes.moneda}::"Currency",
-                    ${attributes.monto_regalo ?? null}::DECIMAL,
+                    ${monto_pagado ?? attributes.monto_regalo ?? null}::DECIMAL,
                     ${estado_trans}::"TransactionState",
                     ${attributes.id_token ?? null}::INTEGER
                 ) AS cod_trans

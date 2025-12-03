@@ -88,10 +88,15 @@ export async function purchaseProduct(
         });
         console.log('[PURCHASE] Transacción registrada exitosamente');
 
-        // 6. Actualizar impacto CO2
+        // 6. Actualizar impacto CO2 (solo para productos)
         console.log('[PURCHASE] Actualizando CO2...');
-        await UserService.update_co2_impact_post(cod_us_comprador, cod_pub);
-        console.log('[PURCHASE] CO2 actualizado');
+        try {
+            await UserService.update_co2_impact_post(cod_us_comprador, cod_pub);
+            console.log('[PURCHASE] CO2 actualizado');
+        } catch (co2Error) {
+            // Algunos tipos de publicaciones (ej. servicios) pueden no tener cálculo de CO2
+            console.log('[PURCHASE] No se pudo actualizar CO2 (puede ser un servicio):', (co2Error as Error).message);
+        }
 
         // 7. Obtener nuevo saldo
         console.log('[PURCHASE] Obteniendo nuevo saldo...');

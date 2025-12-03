@@ -1,8 +1,11 @@
 import { Request, Response } from "express";
 import * as AuthService from "../services/auth.service";
 import { ImageService } from "../services/image.service";
+import { PrismaClient } from "@prisma/client";
 import * as path from 'path';
 import * as fs from 'fs';
+
+const prisma = new PrismaClient();
 
 const defaultImagePath = path.join(__dirname, '../../images/user_default_image.png');
 const image_buffer = fs.readFileSync(defaultImagePath);
@@ -317,6 +320,55 @@ export async function loginOrganization(req: Request, res: Response) {
         return res.status(500).json({
             success: false,
             message: 'Error en el login de organización.',
+            error: (error as Error).message
+        });
+    }
+}
+
+/**
+ * LOGOUT - Cierre de sesión
+ * POST /api/auth/logout
+ * 
+ * Body (JSON):
+ * {
+ *   cod_us: number
+ * }
+ */
+export async function logout(req: Request, res: Response) {
+    try {
+        const { cod_us } = req.body;
+
+        if (!cod_us) {
+            return res.status(400).json({
+                success: false,
+                message: 'El código de usuario es requerido'
+            });
+        }
+
+        console.log(`[AUTH LOGOUT] Registrando logout para usuario: ${cod_us}`);
+
+        // Registrar logout en tabla acceso
+        await prisma.$queryRaw`
+            INSERT INTO acceso (cod_us, estado_acc, fecha_acc)
+            VALUES (
+                ${cod_us}::INTEGER,
+                'logout'::"AccessState",
+                NOW()
+            )
+        `;
+
+        console.log(`[AUTH LOGOUT] ✅ Logout registrado exitosamente`);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Sesión cerrada correctamente'
+        });
+
+    } catch (error) {
+        console.error('[AUTH CONTROLLER LOGOUT ERROR]', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al cerrar sesión',
             error: (error as Error).message
         });
     }

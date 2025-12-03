@@ -70,4 +70,15 @@ router.post('/register-organization', upload.single('logo_org'), AuthController.
  */
 router.post('/login-organization', AuthController.loginOrganization);
 
+/**
+ * POST /api/auth/logout
+ * Cierre de sesión de usuario
+ * 
+ * Body (JSON):
+ * {
+ *   cod_us: number
+ * }
+ */
+router.post('/logout', AuthController.logout);
+
 export default router;

@@ -163,15 +163,21 @@ export async function login(correo_us: string, contra_us: string): Promise<Login
             console.log('========================================\n');
 
             // Registrar intento fallido en tabla acceso
-            await prisma.$queryRaw`
-                INSERT INTO acceso (cod_us, estado_acc, fecha_acc, contra_acc)
-                VALUES (
-                    ${user.cod_us}::INTEGER,
-                    'no_exitoso'::"AccessState",
-                    NOW(),
-                    ${contra_us}::VARCHAR
-                )
-            `;
+            console.log('📝 [ACCESO] Registrando intento fallido...');
+            try {
+                await prisma.$queryRaw`
+                    INSERT INTO acceso (cod_us, estado_acc, fecha_acc, contra_acc)
+                    VALUES (
+                        ${user.cod_us}::INTEGER,
+                        'no_exitoso'::"AccessState",
+                        NOW(),
+                        ${contra_us}::VARCHAR
+                    )
+                `;
+                console.log('✅ [ACCESO] Intento fallido registrado correctamente');
+            } catch (accesoError) {
+                console.error('❌ [ACCESO] Error al insertar intento fallido:', (accesoError as Error).message);
+            }
 
             return {
                 success: false,
@@ -182,15 +188,25 @@ export async function login(correo_us: string, contra_us: string): Promise<Login
         // 5. Login exitoso - Registrar acceso exitoso
         console.log('✅ [AUTH LOGIN] Login exitoso (bcrypt)');
 
-        await prisma.$queryRaw`
-            INSERT INTO acceso (cod_us, estado_acc, fecha_acc, contra_acc)
-            VALUES (
-                ${user.cod_us}::INTEGER,
-                'exitoso'::"AccessState",
-                NOW(),
-                ${contra_us}::VARCHAR
-            )
-        `;
+        console.log('📝 [ACCESO] Intentando registrar acceso exitoso en BD...');
+        console.log('📝 [ACCESO] cod_us:', user.cod_us);
+        console.log('📝 [ACCESO] estado_acc: exitoso');
+
+        try {
+            await prisma.$queryRaw`
+                INSERT INTO acceso (cod_us, estado_acc, fecha_acc, contra_acc)
+                VALUES (
+                    ${user.cod_us}::INTEGER,
+                    'exitoso'::"AccessState",
+                    NOW(),
+                    ${contra_us}::VARCHAR
+                )
+            `;
+            console.log('✅ [ACCESO] Registro de acceso exitoso insertado correctamente');
+        } catch (accesoError) {
+            console.error('❌ [ACCESO] Error al insertar en tabla acceso:', accesoError);
+            console.error('❌ [ACCESO] Detalles del error:', (accesoError as Error).message);
+        }
 
         console.log('========================================\n');
 

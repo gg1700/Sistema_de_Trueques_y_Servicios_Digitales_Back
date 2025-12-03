@@ -21,6 +21,7 @@ import EventEnrollmentRoutes from '../modules/routes/event-enrollment.routes';
 import LikesRoutes from '../modules/routes/likes.routes';
 import ServiceRoutes from '../modules/routes/service.routes';
 import NotificationRoutes from '../modules/routes/notification.routes';
+import MaterialRoutes from '../modules/routes/material.routes';
 
 const router = Router();
 
@@ -45,6 +46,7 @@ router.use('/api/event-enrollments', EventEnrollmentRoutes);
 router.use('/api/likes', LikesRoutes);
 router.use('/api/services', ServiceRoutes);
 router.use('/api/notifications', NotificationRoutes);
+router.use('/api/materials', MaterialRoutes);
 
 router.use('/', HealthCheck);
 

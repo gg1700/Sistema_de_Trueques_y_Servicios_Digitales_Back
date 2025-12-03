@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import AuthRoutes from '../modules/routes/auth.routes';
 import PromotionRoutes from '../modules/routes/promotion.routes';
 import CategoryRoutes from '../modules/routes/category.routes';
 import HealthCheck from '../modules/routes/healthcheck.routes';
@@ -24,6 +25,9 @@ import NotificationRoutes from '../modules/routes/notification.routes';
 
 const router = Router();
 
+// ✅ NUEVA RUTA DE AUTH (SEGURA)
+router.use('/api/auth', AuthRoutes);
+
 router.use('/api/promotions', PromotionRoutes);
 router.use('/api/categories', CategoryRoutes);
 router.use('/api/subcategories', SubcategoryRoutes);
@@ -31,7 +35,15 @@ router.use('/api/equivalences', EquivalenceRoutes);
 router.use('/api/products', ProductRoutes);
 router.use('/api/posts', PostRoutes);
 router.use('/api/users', UserRoutes);
-router.use('/api/access', AccessRoutes);
+
+// ❌ RUTA VIEJA DE ACCESS (DESHABILITADA TEMPORALMENTE PARA DIAGNÓSTICO)
+// Si ves errores 404 en el frontend, significa que está usando esta ruta vieja
+// DEBES cambiar el frontend para usar /api/auth/login en su lugar
+// router.use('/api/access', AccessRoutes);
+console.log('⚠️  ADVERTENCIA: Ruta /api/access DESHABILITADA para diagnóstico');
+console.log('⚠️  Si el login falla con 404, el frontend está usando la ruta vieja');
+console.log('⚠️  Usa /api/auth/login en su lugar');
+
 router.use('/api/wallets', WalletRoutes);
 router.use('/api/transactions', TransactionRoutes);
 router.use('/api/exchanges', ExchangeRoutes);

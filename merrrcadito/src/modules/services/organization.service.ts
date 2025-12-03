@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 interface OrgInfo {
-    nom_com_org: string,       
+    nom_com_org: string,
     nom_leg_org: string,
     tipo_org: 'con_fines_lucro' | 'sin_fines_lucro',
     rubro_org: string,
@@ -57,7 +57,30 @@ export async function get_organization_data(nom_leg_org: string, cif: string) {
             )
         `;
         return organization_data;
-    }catch (err) {
+    } catch (err) {
+        throw new Error((err as Error).message);
+    }
+}
+
+export async function get_organization_by_id(cod_org: number) {
+    try {
+        const organization_data = await prisma.$queryRaw`
+            SELECT 
+                cod_org,
+                nom_com_org,
+                nom_leg_org,
+                tipo_org,
+                rubro_org,
+                correo_org,
+                telf_org,
+                dir_org,
+                sitio_web,
+                fecha_registro_org
+            FROM organizacion
+            WHERE cod_org = ${cod_org}
+        `;
+        return organization_data;
+    } catch (err) {
         throw new Error((err as Error).message);
     }
 }

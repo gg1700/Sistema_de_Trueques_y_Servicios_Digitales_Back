@@ -21,7 +21,7 @@ export async function create_post(cod_us: string, cod_prod: string, current_post
         console.log("current_post:", current_post);
         console.log("image_buffer length:", image_buffer?.length);
 
-        await prisma.$queryRaw`
+        const result: any[] = await prisma.$queryRaw`
             SELECT sp_crearpublicacion(
                 ${cod_us}::INTEGER,
                 ${image_buffer ?? null}::BYTEA,
@@ -30,9 +30,53 @@ export async function create_post(cod_us: string, cod_prod: string, current_post
                 ${cod_prod}::INTEGER,
                 ${current_post.cant_prod}::DECIMAL,
                 ${current_post.unidad_medida}::VARCHAR
-            )
+            ) as cod_pub
         `;
-        return { success: true, message: "Publicación creada correctamente" };
+
+        const cod_pub = result[0]?.cod_pub || result[0]?.sp_crearpublicacion;
+
+        // FORCE CO2 CALCULATION (Direct Update)
+        if (cod_pub) {
+            try {
+                console.log(`[CO2 DEBUG] Starting calculation for cod_pub: ${cod_pub}, cod_prod: ${cod_prod}`);
+
+                // 1. Get Product Weight
+                const prodData: any[] = await prisma.$queryRaw`
+                    SELECT peso_prod FROM producto WHERE cod_prod = ${cod_prod}::INTEGER
+                `;
+                const peso = Number(prodData[0]?.peso_prod || 0);
+                console.log(`[CO2 DEBUG] Product Weight: ${peso}`);
+
+                // 2. Get Material Factor
+                const matData: any[] = await prisma.$queryRaw`
+                    SELECT m.factor_co2, m.nom_mat
+                    FROM material_producto mp
+                    JOIN material m ON mp.cod_mat = m.cod_mat
+                    WHERE mp.cod_prod = ${cod_prod}::INTEGER
+                    LIMIT 1
+                `;
+                const factor = Number(matData[0]?.factor_co2 || 0);
+                console.log(`[CO2 DEBUG] Material Factor: ${factor} (Material: ${matData[0]?.nom_mat || 'None'})`);
+
+                // 3. Calculate Impact
+                const cantidad = Number(current_post.cant_prod || 0);
+                const impacto = peso * cantidad * factor;
+
+                console.log(`[CO2 DEBUG] Calculation: ${peso} * ${cantidad} * ${factor} = ${impacto}`);
+
+                // 4. Update Publication
+                await prisma.$executeRaw`
+                    UPDATE publicacion 
+                    SET impacto_amb_pub = ${impacto}::DECIMAL
+                    WHERE cod_pub = ${cod_pub}::INTEGER
+                `;
+            } catch (calcError) {
+                console.error("Error calculating CO2 impact:", calcError);
+                // Don't fail the whole request if calculation fails
+            }
+        }
+
+        return { success: true, message: "Publicación creada correctamente", cod_pub };
     } catch (err) {
         console.error("=== ERROR EN CREATE POST SERVICE ===");
         console.error("Error completo:", err);

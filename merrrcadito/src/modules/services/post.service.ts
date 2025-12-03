@@ -105,6 +105,7 @@ export async function get_all_active_product_posts() {
                 pp.unidad_medida,
                 cat.nom_cat,
                 subcat.nom_subcat_prod,
+                u.cod_us,
                 u.handle_name,
                 u.correo_us,
                 u.telefono_us

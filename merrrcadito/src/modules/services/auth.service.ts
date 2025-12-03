@@ -34,6 +34,7 @@ interface LoginResult {
     message: string;
     user?: {
         cod_us: number;
+        cod_rol: number; // 🔍 Agregado para admin detection
         nom_us: string;
         handle_name: string;
         correo_us: string;
@@ -58,6 +59,7 @@ export async function login(correo_us: string, contra_us: string): Promise<Login
         const userResult = await prisma.$queryRaw`
             SELECT 
                 u.cod_us, 
+                u.cod_rol,
                 u.contra_us, 
                 u.nom_us, 
                 u.handle_name,
@@ -80,11 +82,12 @@ export async function login(correo_us: string, contra_us: string): Promise<Login
         }
 
         const user = userResult[0];
-
         console.log('✅ Usuario encontrado en BD');
         console.log('👤 cod_us:', user.cod_us);
+        console.log('👤 cod_rol:', user.cod_rol); // 🔍 DEBUG
         console.log('👤 nom_us:', user.nom_us);
         console.log('👤 handle_name:', user.handle_name);
+        console.log('👤 nom_rol:', user.nom_rol); // 🔍 DEBUG
         console.log('👤 estado_us:', user.estado_us);
         console.log('🔐 Hash en BD (primeros 10 chars):', user.contra_us.substring(0, 10) + '...');
         console.log('📏 Longitud hash en BD:', user.contra_us.length);
@@ -117,9 +120,10 @@ export async function login(correo_us: string, contra_us: string): Promise<Login
 
                 return {
                     success: true,
-                    message: 'Login exitoso (ADVERTENCIA: contraseña sin hashear)',
+                    message: 'Login exitoso (contraseña plana - migrar a bcrypt)',
                     user: {
                         cod_us: Number(user.cod_us),
+                        cod_rol: Number(user.cod_rol), // 🔍 Incluir cod_rol
                         nom_us: user.nom_us,
                         handle_name: user.handle_name,
                         correo_us: user.correo_us,
@@ -232,7 +236,7 @@ export async function login(correo_us: string, contra_us: string): Promise<Login
                 WHERE cod_us = ${user.cod_us}::INTEGER
             `;
             console.log(`📊 [ACCESO] Total de accesos para cod_us ${user.cod_us}:`, count[0]?.total);
-
+            console.log('✅ [ACCESO] Registro de acceso exitoso insertado correctamente');
         } catch (accesoError) {
             console.error('❌ [ACCESO] Error al insertar en tabla acceso:', accesoError);
             console.error('❌ [ACCESO] Detalles del error:', (accesoError as Error).message);
@@ -246,6 +250,7 @@ export async function login(correo_us: string, contra_us: string): Promise<Login
             message: 'Login exitoso',
             user: {
                 cod_us: Number(user.cod_us),
+                cod_rol: Number(user.cod_rol), // 🔍 CRÍTICO: Incluir cod_rol
                 nom_us: user.nom_us,
                 handle_name: user.handle_name,
                 correo_us: user.correo_us,

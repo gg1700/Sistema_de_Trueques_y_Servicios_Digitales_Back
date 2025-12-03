@@ -49,7 +49,7 @@ export async function login(req: Request, res: Response) {
         return res.status(200).json({
             success: true,
             message: result.message,
-            user: result.user
+            user: result.user // Ya incluye cod_rol desde auth.service.ts
         });
 
     } catch (error) {

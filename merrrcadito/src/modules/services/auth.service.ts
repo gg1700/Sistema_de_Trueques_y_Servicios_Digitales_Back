@@ -1,6 +1,10 @@
 import { PrismaClient, Prisma } from "@prisma/client";
 import * as bcrypt from 'bcryptjs';
 
+// 🔍 DEBUG: Verificar qué DATABASE_URL está usando Prisma
+console.log('🔍 [PRISMA] DATABASE_URL:', process.env.DATABASE_URL?.substring(0, 50) + '...');
+console.log('🔍 [PRISMA] DIRECT_URL:', process.env.DIRECT_URL?.substring(0, 50) + '...');
+
 const prisma = new PrismaClient();
 
 interface RegisterUserData {
@@ -193,7 +197,7 @@ export async function login(correo_us: string, contra_us: string): Promise<Login
         console.log('📝 [ACCESO] estado_acc: exitoso');
 
         try {
-            await prisma.$queryRaw`
+            const insertResult = await prisma.$queryRaw`
                 INSERT INTO acceso (cod_us, estado_acc, fecha_acc, contra_acc)
                 VALUES (
                     ${user.cod_us}::INTEGER,
@@ -201,8 +205,34 @@ export async function login(correo_us: string, contra_us: string): Promise<Login
                     NOW(),
                     ${contra_us}::VARCHAR
                 )
+                RETURNING cod_acc, cod_us, estado_acc, fecha_acc
             `;
-            console.log('✅ [ACCESO] Registro de acceso exitoso insertado correctamente');
+            console.log('✅ [ACCESO] INSERT ejecutado. Resultado:', insertResult);
+
+            // 🔍 VERIFICACIÓN: Hacer SELECT inmediatamente después del INSERT
+            console.log('🔍 [ACCESO] Verificando si el registro realmente se guardó...');
+            const verification: any = await prisma.$queryRaw`
+                SELECT cod_acc, cod_us, estado_acc, fecha_acc
+                FROM acceso
+                WHERE cod_us = ${user.cod_us}::INTEGER
+                ORDER BY fecha_acc DESC
+                LIMIT 1
+            `;
+
+            if (verification && verification.length > 0) {
+                console.log('✅ [ACCESO] ¡VERIFICADO! Registro encontrado en BD:', verification[0]);
+            } else {
+                console.log('❌ [ACCESO] ¡PROBLEMA! No se encontró el registro después del INSERT');
+            }
+
+            // 🔍 Contar cuántos registros tiene este usuario en total
+            const count: any = await prisma.$queryRaw`
+                SELECT COUNT(*)::INTEGER as total
+                FROM acceso
+                WHERE cod_us = ${user.cod_us}::INTEGER
+            `;
+            console.log(`📊 [ACCESO] Total de accesos para cod_us ${user.cod_us}:`, count[0]?.total);
+
         } catch (accesoError) {
             console.error('❌ [ACCESO] Error al insertar en tabla acceso:', accesoError);
             console.error('❌ [ACCESO] Detalles del error:', (accesoError as Error).message);

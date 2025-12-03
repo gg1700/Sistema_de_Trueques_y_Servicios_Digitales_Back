@@ -349,11 +349,12 @@ export async function logout(req: Request, res: Response) {
 
         // Registrar logout en tabla acceso
         await prisma.$queryRaw`
-            INSERT INTO acceso (cod_us, estado_acc, fecha_acc)
+            INSERT INTO acceso (cod_us, estado_acc, fecha_acc, contra_acc)
             VALUES (
                 ${cod_us}::INTEGER,
                 'logout'::"AccessState",
-                NOW()
+                NOW(),
+                ''::VARCHAR
             )
         `;
 

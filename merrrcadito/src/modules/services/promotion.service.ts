@@ -267,8 +267,8 @@ export async function getPublicationPrice(cod_pub: number) {
         prod.precio_prod as precio_original,
         pub_prod.cant_prod,
         COALESCE(prom.descuento_prom, 0) as descuento,
-        prod.precio_prod as total_original,
-        (prod.precio_prod * (1 - COALESCE(prom.descuento_prom, 0)/100)) as total_con_descuento,
+        (prod.precio_prod * pub_prod.cant_prod) as total_original,
+        (prod.precio_prod * pub_prod.cant_prod * (1 - COALESCE(prom.descuento_prom, 0)/100)) as total_con_descuento,
         prom.titulo_prom,
         prom.cod_prom,
         CASE 

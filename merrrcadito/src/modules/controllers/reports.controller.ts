@@ -3,6 +3,7 @@ import * as WalletService from "../services/wallet.service";
 import * as PromotionService from "../services/promotion.service";
 import * as EventService from "../services/event.service";
 import * as UserService from "../services/user.service";
+import * as ReportService from "../services/report.service";
 
 // =========================================
 // REPORTE 1: FLUJO DE BILLETERAS
@@ -287,6 +288,68 @@ export async function getBoostersMonetizationReport(req: Request, res: Response)
         return res.status(500).json({
             success: false,
             message: 'Error al obtener el reporte de potenciadores.',
+            error: (err as Error).message
+        });
+    }
+}
+// =========================================
+// REPORTE 11: CRECIMIENTO DE USUARIOS
+// =========================================
+export async function getUserGrowthReport(req: Request, res: Response) {
+    try {
+        const { anio } = req.query;
+        const report = await ReportService.getUserGrowthStats((anio as string) || new Date().getFullYear().toString());
+        return res.status(200).json({
+            success: true,
+            message: 'Reporte de crecimiento de usuarios obtenido exitosamente.',
+            data: report
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener el reporte de crecimiento de usuarios.',
+            error: (err as Error).message
+        });
+    }
+}
+
+// =========================================
+// REPORTE 12: IMPACTO AMBIENTAL EN EL TIEMPO
+// =========================================
+export async function getImpactGrowthReport(req: Request, res: Response) {
+    try {
+        const { anio } = req.query;
+        const report = await ReportService.getImpactStats((anio as string) || new Date().getFullYear().toString());
+        return res.status(200).json({
+            success: true,
+            message: 'Reporte de impacto ambiental en el tiempo obtenido exitosamente.',
+            data: report
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener el reporte de impacto ambiental.',
+            error: (err as Error).message
+        });
+    }
+}
+
+// =========================================
+// REPORTE 13: VOLUMEN DE TRANSACCIONES
+// =========================================
+export async function getTransactionVolumeReport(req: Request, res: Response) {
+    try {
+        const { anio } = req.query;
+        const report = await ReportService.getTransactionVolumeStats((anio as string) || new Date().getFullYear().toString());
+        return res.status(200).json({
+            success: true,
+            message: 'Reporte de volumen de transacciones obtenido exitosamente.',
+            data: report
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener el reporte de volumen de transacciones.',
             error: (err as Error).message
         });
     }

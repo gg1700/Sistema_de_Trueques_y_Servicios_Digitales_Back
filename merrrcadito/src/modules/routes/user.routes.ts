@@ -17,9 +17,10 @@ router.get('/activity_report_by_week', UserController.getUsersActivityReportByWe
 
 router.get('/activity_report_by_month', UserController.getUsersActivityReportByMonth);
 
-router.post('/register', upload.single('foto_us'), UserController.registerUser);
-
-router.post('/register_entrepreneur', upload.single('foto_us'), EntrepreneurController.registerEntrepreneur);
+// ❌ RUTAS INSEGURAS DESHABILITADAS - NO HASHEAN CONTRASEÑAS
+// Usa /api/auth/register en su lugar (hashea contraseñas con bcrypt)
+// router.post('/register', upload.single('foto_us'), UserController.registerUser);
+// router.post('/register_entrepreneur', upload.single('foto_us'), EntrepreneurController.registerEntrepreneur);
 
 router.get('/get_user_data', UserController.getUserData);
 

@@ -11,7 +11,9 @@ router.post('/register', upload.single('logo_org'), OrganizationController.regis
 
 router.get('/:id/image', OrganizationController.getOrganizationLogo);
 
-router.get("/get_org_data",OrganizationController.getOrganizationData);
+router.get("/get_org_data", OrganizationController.getOrganizationData);
+
+router.get('/:id', OrganizationController.getOrganizationById);
 
 
 export default router;

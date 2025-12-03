@@ -10,15 +10,30 @@ export async function registerAccess(req: Request, res: Response) {
                 message: "Parámetros de consulta inválidos"
             });
         }
+
         const result = await AccessService.register_access(cod_us, contra_acc);
+
+        // Si la contraseña es incorrecta, retornar 401 Unauthorized
+        if (!result.success) {
+            return res.status(401).json({
+                success: false,
+                message: result.message,
+                estado: result.estado
+            });
+        }
+
+        // Login exitoso
         return res.status(200).json({
             success: true,
-            message: result.message
+            message: result.message,
+            estado: result.estado,
+            cod_us: parseInt(cod_us)
         });
     } catch (error) {
+        console.error('[ACCESS CONTROLLER ERROR]', error);
         return res.status(500).json({
             success: false,
-            message: 'Error al registrar el acceso: ',
+            message: 'Error al registrar el acceso',
             error: (error as Error).message
         });
     }
@@ -38,7 +53,7 @@ export async function registerLogout(req: Request, res: Response) {
             success: true,
             message: result.message
         });
-    }catch (error) {
+    } catch (error) {
         return res.status(500).json({
             success: false,
             message: 'Error al registrar el cierre de sesión: ',

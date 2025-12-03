@@ -81,6 +81,20 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                             SET saldo_actual = saldo_actual - ${total_cost}::DECIMAL
                             WHERE cod_us = ${cod_us_origen}::INTEGER
                         `;
+
+                        // NUEVO: Sumar impacto ambiental al comprador
+                        const pubData: any[] = await tx.$queryRaw`
+                            SELECT impacto_amb_pub FROM publicacion WHERE cod_pub = ${attributes.cod_pub}::INTEGER
+                        `;
+                        const impact = Number(pubData[0]?.impacto_amb_pub || 0);
+
+                        if (impact > 0) {
+                            await tx.$executeRaw`
+                                UPDATE detalle_usuario
+                                SET huella_co2 = COALESCE(huella_co2, 0) + ${impact}::DECIMAL
+                                WHERE cod_us = ${cod_us_origen}::INTEGER
+                            `;
+                        }
                     }
                 }
             } else if (attributes.cod_evento != null && attributes.cod_pub == null && attributes.id_token == null) {

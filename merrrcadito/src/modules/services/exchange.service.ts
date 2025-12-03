@@ -99,6 +99,15 @@ export async function create_exchange(data: CreateExchangeData) {
                 )
             `;
 
+            // 5. Sumar impacto ambiental al usuario creador
+            if (impacto_amb_inter > 0) {
+                await tx.$executeRaw`
+                    UPDATE detalle_usuario
+                    SET huella_co2 = COALESCE(huella_co2, 0) + ${impacto_amb_inter}::DECIMAL
+                    WHERE cod_us = ${data.cod_us_1}::INTEGER
+                `;
+            }
+
             console.log(`Oferta de intercambio creada: ${cod_inter}, Producto creado: ${cod_prod_nuevo}`);
 
             return {

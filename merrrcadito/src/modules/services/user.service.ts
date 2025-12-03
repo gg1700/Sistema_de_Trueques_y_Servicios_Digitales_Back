@@ -370,11 +370,11 @@ export async function get_user_environmental_impact(cod_us: number) {
             FROM transaccion t
             INNER JOIN publicacion p ON t.cod_pub = p.cod_pub
             INNER JOIN publicacion_producto pp ON p.cod_pub = pp.cod_pub
-            WHERE t.cod_us_destino = ${cod_us}
-            AND t.estado_trans = 'satisfactorio'
+            WHERE t.cod_us_origen = ${cod_us}
+            AND t.estado_trans::text = 'satisfactorio'
         `;
         const impacto_promedio_productos = Number(productosResult[0]?.promedio || 0);
-        console.log(`Promedio productos: ${impacto_promedio_productos}`);
+        console.log(`[DEBUG] Promedio productos (usuario ${cod_us}): ${impacto_promedio_productos}`);
 
         // 4. Calcular promedio de impacto por servicios comprados
         const serviciosResult: any[] = await prisma.$queryRaw`
@@ -382,11 +382,11 @@ export async function get_user_environmental_impact(cod_us: number) {
             FROM transaccion t
             INNER JOIN publicacion p ON t.cod_pub = p.cod_pub
             INNER JOIN publicacion_servicio ps ON p.cod_pub = ps.cod_pub
-            WHERE t.cod_us_destino = ${cod_us}
-            AND t.estado_trans = 'satisfactorio'
+            WHERE t.cod_us_origen = ${cod_us}
+            AND t.estado_trans::text = 'satisfactorio'
         `;
         const impacto_promedio_servicios = Number(serviciosResult[0]?.promedio || 0);
-        console.log(`Promedio servicios: ${impacto_promedio_servicios}`);
+        console.log(`[DEBUG] Promedio servicios (usuario ${cod_us}): ${impacto_promedio_servicios}`);
 
         // 5. Calcular aporte ambiental por participación en eventos
         // Nota: La tabla evento no tiene campo impacto_ambiental, así que contamos la participación
@@ -435,5 +435,21 @@ export async function get_user_environmental_impact(cod_us: number) {
     } catch (err) {
         console.error('Error en get_user_environmental_impact:', err);
         throw new Error((err as Error).message);
+    }
+}
+
+export async function increase_user_ecological_impact(cod_us: number, amount: number) {
+    try {
+        if (!amount || amount <= 0) return;
+
+        await prisma.$executeRaw`
+            UPDATE detalle_usuario
+            SET huella_co2 = COALESCE(huella_co2, 0) + ${amount}::DECIMAL
+            WHERE cod_us = ${cod_us}::INTEGER
+        `;
+        console.log(`[ECO IMPACT] Increased impact for user ${cod_us} by ${amount}`);
+    } catch (err) {
+        console.error(`[ECO IMPACT] Error increasing impact for user ${cod_us}:`, err);
+        // No lanzamos error para no interrumpir el flujo principal
     }
 }

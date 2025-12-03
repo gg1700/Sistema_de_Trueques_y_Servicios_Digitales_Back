@@ -1,10 +1,24 @@
 import Server from './config/server.config';
 import connectToDatabase, { prisma } from './database';
+import { forceDisableTriggers, checkTriggerStatus } from './modules/services/init.service';
 
 import { PORT } from './config/env.config';
 
 async function startServer() {
     try {
+        // CRITICAL: Force disable triggers that cause double wallet deductions
+        console.log('==========================================');
+        console.log('CHECKING TRIGGER STATUS BEFORE DISABLING...');
+        await checkTriggerStatus();
+
+        console.log('==========================================');
+        await forceDisableTriggers();
+
+        console.log('==========================================');
+        console.log('VERIFYING TRIGGERS ARE DISABLED...');
+        await checkTriggerStatus();
+        console.log('==========================================');
+
         const server = Server.listen(PORT, () => {
             console.info(`Server running on port: ${PORT}`);
         });

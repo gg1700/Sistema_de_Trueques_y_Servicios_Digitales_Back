@@ -75,7 +75,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                     } else {
                         monto_pagado = total_cost;
                         estado_trans = 'satisfactorio';
-                        // Actualizar el saldo del usuario origen DENTRO DE LA TRANSACCIÓN
+                        // Update wallet here - triggers are disabled, so no double charging
                         await tx.$queryRaw`
                             UPDATE billetera
                             SET saldo_actual = saldo_actual - ${total_cost}::DECIMAL
@@ -123,7 +123,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                     } else {
                         monto_pagado = costo_inscripcion;
                         estado_trans = 'satisfactorio';
-                        // Actualizar el saldo del usuario origen DENTRO DE LA TRANSACCIÓN
+                        // Update wallet here - triggers are disabled, so no double charging
                         await tx.$queryRaw`
                             UPDATE billetera
                             SET saldo_actual = saldo_actual - ${costo_inscripcion}::DECIMAL
@@ -210,7 +210,7 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                         monto_pagado_bs = precio_real_num;
                         estado_trans = 'satisfactorio';
                         console.log(`[DEBUG] Saldo suficiente. Actualizando billetera...`);
-                        // Actualizar saldo real (descontar dinero) y saldo actual (agregar tokens) DENTRO DE LA TRANSACCIÓN
+                        // Update wallet for token purchases (this is special case - adds tokens)
                         await tx.$queryRaw`
                             UPDATE billetera
                             SET saldo_real = saldo_real - ${precio_real_num}::DECIMAL,
@@ -330,6 +330,7 @@ export async function get_complete_transaction_history_by_month(month: string) {
 export async function getPendingCollections(cod_us: number) {
     try {
         // Consultar todos los escrows donde el usuario es el destino de la transacción
+        // Incluir el nombre de la publicación (producto o servicio)
         const pendingCollections: any[] = await prisma.$queryRaw`
             SELECT 
                 e.cod_escrow,
@@ -340,14 +341,21 @@ export async function getPendingCollections(cod_us: number) {
                 t.fecha_trans,
                 t.moneda,
                 t.desc_trans,
+                t.cod_pub,
                 u_origen.nom_us,
                 u_origen.ap_pat_us,
                 u_origen.ap_mat_us,
                 u_origen.handle_name as handle_origen,
-                u_origen.foto_us as foto_origen
+                u_origen.foto_us as foto_origen,
+                COALESCE(prod.nom_prod, serv.nom_serv, 'Publicación') as nombre_publicacion
             FROM escrow e
             INNER JOIN transaccion t ON e.cod_trans = t.cod_trans
             INNER JOIN usuario u_origen ON t.cod_us_origen = u_origen.cod_us
+            LEFT JOIN publicacion pub ON t.cod_pub = pub.cod_pub
+            LEFT JOIN publicacion_producto pub_prod ON pub.cod_pub = pub_prod.cod_pub
+            LEFT JOIN producto prod ON pub_prod.cod_prod = prod.cod_prod
+            LEFT JOIN publicacion_servicio pub_serv ON pub.cod_pub = pub_serv.cod_pub
+            LEFT JOIN servicio serv ON pub_serv.cod_serv = serv.cod_serv
             WHERE t.cod_us_destino = ${cod_us}
             ORDER BY t.fecha_trans DESC
         `;
@@ -357,7 +365,9 @@ export async function getPendingCollections(cod_us: number) {
             ...collection,
             nombre_origen: `${collection.nom_us} ${collection.ap_pat_us} ${collection.ap_mat_us || ''}`.trim(),
             foto_origen: undefined, // No enviar bytea
-            tiene_foto: collection.foto_origen !== null
+            tiene_foto: collection.foto_origen !== null,
+            // Usar el nombre de la publicación en lugar de desc_trans
+            titulo_publicacion: collection.nombre_publicacion
         }));
 
         return processedCollections;

@@ -69,16 +69,18 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
 
                     const total_cost = priceData.total_con_descuento;
 
-                    // Determinar el estado de la transacción según el saldo del usuario origen y el costo total
                     if (saldo_actual < total_cost) {
                         estado_trans = 'no_satisfactorio';
                     } else {
                         monto_pagado = total_cost;
                         estado_trans = 'satisfactorio';
-                        monto_pagado = total_cost;
-                        estado_trans = 'satisfactorio';
-                        // El saldo se actualiza automáticamente mediante el trigger trg_after_trans_aplicar_saldos
-                        // No es necesario hacerlo manualmente aquí para evitar doble cobro
+
+                        // Actualizar saldo del comprador (descontar tokens)
+                        await tx.$queryRaw`
+                            UPDATE billetera
+                            SET saldo_actual = saldo_actual - ${total_cost}::DECIMAL
+                            WHERE cod_us = ${cod_us_origen}::INTEGER
+                        `;
                     }
                 }
             } else if (attributes.cod_evento != null && attributes.cod_pub == null && attributes.id_token == null) {
@@ -121,10 +123,13 @@ export async function register_transaction(cod_us_origen: string, attributes: Pa
                     } else {
                         monto_pagado = costo_inscripcion;
                         estado_trans = 'satisfactorio';
-                        monto_pagado = costo_inscripcion;
-                        estado_trans = 'satisfactorio';
-                        // El saldo se actualiza automáticamente mediante el trigger trg_after_trans_aplicar_saldos
-                        // No es necesario hacerlo manualmente aquí para evitar doble cobro
+
+                        // Actualizar saldo del comprador (descontar tokens)
+                        await tx.$queryRaw`
+                            UPDATE billetera
+                            SET saldo_actual = saldo_actual - ${costo_inscripcion}::DECIMAL
+                            WHERE cod_us = ${cod_us_origen}::INTEGER
+                        `;
                     }
                 }
             } else if (attributes.id_token != null && attributes.cod_pub == null && attributes.cod_evento == null) {
@@ -338,10 +343,15 @@ export async function getPendingCollections(cod_us: number) {
                 u_origen.ap_pat_us,
                 u_origen.ap_mat_us,
                 u_origen.handle_name as handle_origen,
-                u_origen.foto_us as foto_origen
+                u_origen.foto_us as foto_origen,
+                COALESCE(prod.nom_prod, serv.nom_serv) as nombre_item
             FROM escrow e
             INNER JOIN transaccion t ON e.cod_trans = t.cod_trans
             INNER JOIN usuario u_origen ON t.cod_us_origen = u_origen.cod_us
+            LEFT JOIN publicacion_producto pp ON t.cod_pub = pp.cod_pub
+            LEFT JOIN producto prod ON pp.cod_prod = prod.cod_prod
+            LEFT JOIN publicacion_servicio ps ON t.cod_pub = ps.cod_pub
+            LEFT JOIN servicio serv ON ps.cod_serv = serv.cod_serv
             WHERE t.cod_us_destino = ${cod_us}
             ORDER BY t.fecha_trans DESC
         `;

@@ -31,6 +31,10 @@ router.get('/achievements_gamification', ReportsController.getAchievementsGamifi
 router.get('/ratings_satisfaction', ReportsController.getRatingsSatisfactionReport);
 
 // REPORTE 10: Potenciadores y Monetización
-router.get('/boosters_monetization', ReportsController.getBoostersMonetizationReport);
+router.get('/boosters-monetization', ReportsController.getBoostersMonetizationReport);
+
+router.get('/user-growth', ReportsController.getUserGrowthReport);
+router.get('/impact-growth', ReportsController.getImpactGrowthReport);
+router.get('/transaction-volume', ReportsController.getTransactionVolumeReport);
 
 export default router;

@@ -522,3 +522,49 @@ export async function getUserIncomeByMonth(req: Request, res: Response) {
         });
     }
 }
+
+export async function exchangeCVtoBs(req: Request, res: Response) {
+    try {
+        const { cod_us, cv_amount } = req.body;
+
+        if (!cod_us || !cv_amount) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de usuario y cantidad de CV son requeridos.'
+            });
+        }
+
+        const userId = parseInt(cod_us);
+        const cvAmount = parseFloat(cv_amount);
+
+        if (isNaN(userId) || isNaN(cvAmount)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Los valores proporcionados no son válidos.'
+            });
+        }
+
+        if (cvAmount <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'La cantidad de CV debe ser mayor a 0.'
+            });
+        }
+
+        console.log('exchangeCVtoBs params:', { userId, cvAmount });
+
+        const result = await UserService.exchange_cv_to_bs(userId, cvAmount);
+
+        return res.status(200).json({
+            success: true,
+            message: `Canje exitoso: ${result.cv_exchanged} CV canjeados por ${result.bs_received.toFixed(2)} Bs`,
+            data: result
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al canjear CV por Bs.',
+            error: (err as Error).message
+        });
+    }
+}

@@ -623,3 +623,69 @@ export async function get_user_income_by_month(cod_us: number, year?: string) {
         throw new Error((err as Error).message);
     }
 }
+
+// CANJEAR CV A BS (PARA EMPRENDEDORES)
+// Fórmula: 35 CV = 1 Bs
+export async function exchange_cv_to_bs(cod_us: number, cv_amount: number) {
+    try {
+        console.log('exchange_cv_to_bs service args:', { cod_us, cv_amount });
+
+        // Validar entrada
+        if (cv_amount <= 0) {
+            throw new Error('La cantidad de CV debe ser mayor a 0');
+        }
+
+        // Calcular bolivianos según la fórmula: 35 CV = 1 Bs
+        const bs_amount = cv_amount / 35;
+
+        console.log(`Canjeando ${cv_amount} CV por ${bs_amount} Bs`);
+
+        // Obtener saldo actual del usuario
+        const walletResult: any[] = await prisma.$queryRaw`
+            SELECT saldo_actual, saldo_real
+            FROM billetera
+            WHERE cod_us = ${cod_us}
+        `;
+
+        if (walletResult.length === 0) {
+            throw new Error('Billetera no encontrada para el usuario');
+        }
+
+        const currentWallet = walletResult[0];
+        const currentCV = Number(currentWallet.saldo_actual);
+        const currentBs = Number(currentWallet.saldo_real);
+
+        console.log(`Saldo actual: ${currentCV} CV, ${currentBs} Bs`);
+
+        // Validar que tenga suficiente CV
+        if (currentCV < cv_amount) {
+            throw new Error(`Saldo insuficiente. Tienes ${currentCV} CV y necesitas ${cv_amount} CV`);
+        }
+
+        // Calcular nuevos saldos
+        const newCV = currentCV - cv_amount;
+        const newBs = currentBs + bs_amount;
+
+        console.log(`Nuevos saldos: ${newCV} CV, ${newBs} Bs`);
+
+        // Actualizar la billetera
+        await prisma.$queryRaw`
+            UPDATE billetera
+            SET saldo_actual = ${newCV},
+                saldo_real = ${newBs},
+                fecha_ultima_trans = NOW()
+            WHERE cod_us = ${cod_us}
+        `;
+
+        return {
+            success: true,
+            cv_exchanged: cv_amount,
+            bs_received: bs_amount,
+            new_cv_balance: newCV,
+            new_bs_balance: newBs
+        };
+    } catch (err) {
+        console.error('Error en exchange_cv_to_bs:', err);
+        throw new Error((err as Error).message);
+    }
+}

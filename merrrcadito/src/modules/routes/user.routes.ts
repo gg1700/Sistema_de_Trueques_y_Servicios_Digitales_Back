@@ -47,4 +47,6 @@ router.get('/:id/sales_by_month', UserController.getUserSalesByMonth);
 
 router.get('/:id/income_by_month', UserController.getUserIncomeByMonth);
 
+router.post('/exchange_cv_to_bs', UserController.exchangeCVtoBs);
+
 export default router;
